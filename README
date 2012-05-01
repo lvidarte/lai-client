@@ -1,0 +1,8 @@
+Requirements:
+
+1. SERVER
+ * tornado
+ * pymongo
+
+2. CLIENT
+ * pymongo
