@@ -12,8 +12,11 @@ import pymongo
 import logging
 
 
+tornado.options.parse_config_file('config.py')
+tornado.options.parse_command_line()
+
 conn = pymongo.Connection()
-db = conn.lai
+db = conn[options.db_collection]
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -57,9 +60,6 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 if __name__ == '__main__':
-    tornado.options.parse_config_file('config.py')
-    tornado.options.parse_command_line()
-
     application = tornado.web.Application([
             (r'/(\d+)?', MainHandler),
         ], debug=options.debug)

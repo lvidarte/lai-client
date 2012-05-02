@@ -4,3 +4,4 @@ from tornado.options import define
 
 
 define("debug", True)
+define("db_collection", "lai")
