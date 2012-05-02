@@ -3,6 +3,7 @@ Requirements:
 1. SERVER
  * tornado
  * pymongo
+ * lettuce
 
 2. CLIENT
  * pymongo
