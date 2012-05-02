@@ -4,8 +4,13 @@
 
 import tornado.ioloop
 import tornado.web
+import tornado.options
+from tornado.options import options
+
 import json
 import pymongo
+import logging
+
 
 conn = pymongo.Connection()
 db = conn.lai
@@ -52,8 +57,14 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 if __name__ == '__main__':
+    tornado.options.parse_config_file('config.py')
+    tornado.options.parse_command_line()
+
     application = tornado.web.Application([
             (r'/(\d+)?', MainHandler),
-        ])
+        ], debug=options.debug)
     application.listen(8888)
+
+    logging.info('lai server started')
     tornado.ioloop.IOLoop.instance().start()
+
