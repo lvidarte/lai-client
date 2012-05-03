@@ -14,6 +14,8 @@ class Response:
 def get_full_url(url):
     if not url.startswith('http://'):
         return 'http://localhost:8888%s' % url
+    else:
+        return url
 
 
 def request(url, method='GET', params=None, headers={}):
