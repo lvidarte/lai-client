@@ -44,22 +44,23 @@ def request(url, method='GET', params=None, headers={}):
     return Response(**response)
 
 
-def jsonify(params):
+def json_loads_params(params):
     # Json encode for list, dict and tuple
     if type(params) == dict:
         for k, v in params:
             if type(v) in (list, dict, tuple):
-                params[str(k)] = json.dumps(v)
+                params[k] = json.dumps(v)
     return params
 
 
-def request2(url, method='GET', params=None, headers={}):
-    # Auto encode dict, list and tupe to json string
-    response = request(url, method, jsonify(params), headers)
-
-    # Auto load json
+def json_loads_data(response):
     for k, v in response.headers:
         if k.lower() == 'content-type' and v.startswith('application/json'):
             response.data = json.loads(response.data)
-
     return response
+
+
+def request_auto_json(url, method='GET', params=None, headers={}):
+    response = request(url, method, json_loads_params(params), headers)
+    return json_loads_data(response)
+
