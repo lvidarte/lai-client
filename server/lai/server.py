@@ -12,18 +12,22 @@ import pymongo
 import logging
 
 
-tornado.options.parse_config_file('config.py')
-tornado.options.parse_command_line()
-
-conn = pymongo.Connection()
-db = conn[options.db_collection]
-
+class Application(tornado.web.Application):
+    def __init__(self):
+        handlers = [(r'/(\d+)?', MainHandler)]
+        self.conn = pymongo.Connection(options.db_host, options.db_port)
+        self.db = self.conn[options.db_name]
+        tornado.web.Application.__init__(self, handlers, debug=True)
 
 class MainHandler(tornado.web.RequestHandler):
+    def __init__(self, *args, **kwargs):
+        super(MainHandler, self).__init__(*args, **kwargs)
+        self.coll = self.application.db[options.db_collection]
+
     def get(self, tid=None):
         tid = self._check_tid(tid)
         docs = []
-        for doc in db.docs.find({'tid': {'$gt': tid}}):
+        for doc in self.coll.find({'tid': {'$gt': tid}}):
             doc['_id'] = str(doc['_id'])
             docs.append(doc)
         self.set_header('Content-Type', 'application/json')
@@ -45,7 +49,7 @@ class MainHandler(tornado.web.RequestHandler):
 
     def _process(self, doc, tid):
         doc['tid'] = tid
-        doc['_id'] = str(db.docs.insert(doc))
+        doc['_id'] = str(self.coll.insert(doc))
         del doc['data']
         return doc
 
@@ -53,17 +57,18 @@ class MainHandler(tornado.web.RequestHandler):
         return max(docs, key=lambda doc:doc['tid'])['tid']
 
     def _check_db_tid(self, tid):
-        return not db.docs.find({'tid': {'$gt': tid}}).count()
+        return not self.coll.find({'tid': {'$gt': tid}}).count()
 
     def _check_tid(self, tid):
         return 0 if tid is None else int(tid)
 
 
 if __name__ == '__main__':
-    application = tornado.web.Application([
-            (r'/(\d+)?', MainHandler),
-        ], debug=options.debug)
-    application.listen(8888)
+    tornado.options.parse_config_file('config.py')
+    tornado.options.parse_command_line()
+
+    application = Application()
+    application.listen(options.port)
 
     logging.info('lai server started')
     tornado.ioloop.IOLoop.instance().start()
