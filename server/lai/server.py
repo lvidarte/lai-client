@@ -27,9 +27,11 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self, tid=None):
         tid = self._check_tid(tid)
         docs = []
-        for doc in self.coll.find({'tid': {'$gt': tid}}):
-            doc['_id'] = str(doc['_id'])
-            docs.append(doc)
+        for doc in self.coll.find({'transaction_id': {'$gt': tid}}):
+            _doc = {'server_id':      str(doc['_id']),
+                    'transaction_id': doc['transaction_id'],
+                    'data':           doc['data']}
+            docs.append(_doc)
         self.set_header('Content-Type', 'application/json')
         self.write(json.dumps(docs))
 
@@ -48,16 +50,17 @@ class MainHandler(tornado.web.RequestHandler):
             self.write('you must update first')
 
     def _process(self, doc, tid):
-        doc['tid'] = tid
-        doc['_id'] = str(self.coll.insert(doc))
-        del doc['data']
-        return doc
+        _id = str(self.coll.insert({'transaction_id': tid, 'data': doc['data']}))
+        _doc = {'server_id':      _id,
+                'client_id':      doc['client_id'],
+                'transaction_id': tid}
+        return _doc
 
     def _get_max_tid(self, docs):
         return max(docs, key=lambda doc:doc['tid'])['tid']
 
     def _check_db_tid(self, tid):
-        return not self.coll.find({'tid': {'$gt': tid}}).count()
+        return not self.coll.find({'transaction_id': {'$gt': tid}}).count()
 
     def _check_tid(self, tid):
         return 0 if tid is None else int(tid)
