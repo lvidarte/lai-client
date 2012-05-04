@@ -17,7 +17,7 @@ class Application(tornado.web.Application):
         handlers = [(r'/(\d+)?', MainHandler)]
         self.conn = pymongo.Connection(options.db_host, options.db_port)
         self.db = self.conn[options.db_name]
-        tornado.web.Application.__init__(self, handlers, debug=True)
+        super(Application, self).__init__(handlers, debug=True)
 
 class MainHandler(tornado.web.RequestHandler):
     def __init__(self, *args, **kwargs):
