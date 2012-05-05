@@ -21,9 +21,7 @@ Feature: Test Lai
     Scenario: Make a commit without transaction_id and docs
         When I request the url "/" with the method "POST"
         Then The response status code should be 400
-        Then The response reason text should be "Bad Request"
 
     Scenario: Make a commit with transaction_id and without docs
-        When I request the url "/" with the method "POST"
+        When I request the url "/1" with the method "POST"
         Then The response status code should be 400
-        Then The response reason text should be "Bad Request"
