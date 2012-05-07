@@ -25,14 +25,13 @@ coll = db[config.DB_COLLECTION]
 def get(*args):
     id = int(args[0]) if len(args) else 0
     params = {'_id': id} if id else {}
-    for doc in coll.find(params):
-        print doc
+    return list(coll.find(params))
 
 
 def add(*args):
     doc = {'data': args[0],
            'commit': True}
-    coll.insert(doc)
+    return coll.insert(doc)
 
 
 def up():
@@ -46,9 +45,9 @@ def up():
                         {'$set': {'transaction_id': doc['transaction_id'],
                                   'data': doc['data']}},
                         safe=True, upsert=True)
-        print "updated ok"
+        return "updated ok"
     else:
-        print "nothing to update"
+        return "nothing to update"
 
 
 def ci():
@@ -93,9 +92,10 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         try:
             if len(sys.argv) > 2:
-                globals()[sys.argv[1]](*sys.argv[2:])
+                rs = globals()[sys.argv[1]](*sys.argv[2:])
             else:
-                globals()[sys.argv[1]]()
+                rs = globals()[sys.argv[1]]()
+            print rs
         except KeyError, e:
             print "Method not implemented"
             print e
