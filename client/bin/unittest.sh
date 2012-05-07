@@ -1,5 +1,4 @@
 #!/bin/bash
-export PYHTONPATH=$(pwd)/../lai
-echo $PYTHONPATH
+source env/bin/activate
 python -m unittest discover -s tests
-
+deactivate
