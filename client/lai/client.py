@@ -14,7 +14,7 @@ except ImportError:
     from pymongo.objectid import ObjectId
 
 
-import config
+from lai import config
 
 
 conn = pymongo.Connection(config.DB_HOST, config.DB_PORT)
@@ -23,8 +23,9 @@ coll = db[config.DB_COLLECTION]
 
 
 def get(*args):
-    id = int(args[0]) if len(args) else 0
-    params = {'_id': id} if id else {}
+    params = json.loads(args[0]) if len(args) else {}
+    if '_id' in params:
+        params['_id'] = ObjectId(params['_id'])
     return list(coll.find(params))
 
 
@@ -32,6 +33,16 @@ def add(*args):
     doc = {'data': args[0],
            'commit': True}
     return coll.insert(doc)
+
+
+def update(*args):
+    _id = args[0]
+    data = args[1]
+    return coll.update({'_id': ObjectId(_id)}, {'$set': {'data': data, 'commit': True}})
+
+
+def delete(*args):
+    return coll.remove({'_id': ObjectId(args[0])})
 
 
 def up():

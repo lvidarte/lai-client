@@ -67,7 +67,7 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 if __name__ == '__main__':
-    tornado.options.parse_config_file('config.py')
+    tornado.options.parse_config_file('lai/config.py')
     tornado.options.parse_command_line()
 
     application = Application()
