@@ -24,20 +24,18 @@ class TestClient(unittest.TestCase):
         assert type(lai.client.get()) == list
 
     def test_get_by_id(self):
-        args = json.dumps({'_id': self.id})
-        docs = lai.client.get(args)
+        docs = lai.client.get(self.id)
         assert type(docs) == list
 
     def test_update(self):
         new_data = "Other testing data"
         lai.client.update(self.id, new_data)
-        args = json.dumps({'_id': self.id})
-        docs = lai.client.get(args)
+        docs = lai.client.get(self.id)
         assert docs[0]['data'] == new_data
         assert str(docs[0]['_id']) == self.id
 
-    def test_get_max_transaction_id(self):
-        assert type(lai.client.get_max_transaction_id()) == int
+    def test_get_last_transaction_id(self):
+        assert type(lai.client.get_last_transaction_id()) == int
 
     def test_get_doc_for_commit(self):
         _doc = {'_id': 1,

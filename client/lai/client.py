@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-## tid = transaction_id
-
 import sys
 import urllib
 import urllib2
@@ -13,32 +11,29 @@ try:
 except ImportError:
     from pymongo.objectid import ObjectId
 
-
-from lai import config
+import config
 
 
 conn = pymongo.Connection(config.DB_HOST, config.DB_PORT)
-db = conn[config.DB_NAME]
+db   = conn[config.DB_NAME]
 coll = db[config.DB_COLLECTION]
 
 
 def get(*args):
-    params = json.loads(args[0]) if len(args) else {}
-    if '_id' in params:
-        params['_id'] = ObjectId(params['_id'])
+    params = {'_id': ObjectId(args[0])} if len(args) else {}
     return list(coll.find(params))
 
 
 def add(*args):
-    doc = {'data': args[0],
-           'commit': True}
+    doc = {'data': args[0], 'commit': True}
     return coll.insert(doc)
 
 
 def update(*args):
-    _id = args[0]
+    _id = ObjectId(args[0])
     data = args[1]
-    return coll.update({'_id': ObjectId(_id)}, {'$set': {'data': data, 'commit': True}})
+    return coll.update({'_id': _id},
+                       {'$set': {'data': data, 'commit': True}})
 
 
 def delete(*args):
@@ -46,8 +41,7 @@ def delete(*args):
 
 
 def up():
-    tid = get_max_transaction_id()
-    url = "%s/%s" % (config.SERVER, tid)
+    url = "%s/%s" % (config.SERVER, get_last_transaction_id())
     req = urllib2.urlopen(url)
     docs = json.loads(req.read())
     if len(docs):
@@ -62,25 +56,28 @@ def up():
 
 
 def ci():
-    tid = get_max_transaction_id()
-    url = "%s/%s" % (config.SERVER, tid)
+    url = "%s/%s" % (config.SERVER, get_last_transaction_id())
 
     docs = []
     for doc in coll.find({'commit': True}):
         docs.append(get_doc_for_commit(doc))
 
-    data = urllib.urlencode({'docs': json.dumps(docs)})
-    req = urllib2.Request(url, data)
-    res = urllib2.urlopen(req)
+    if len(docs):
+        data = urllib.urlencode({'docs': json.dumps(docs)})
+        req = urllib2.Request(url, data)
+        res = urllib2.urlopen(req)
 
-    for doc in json.loads(res.read()):
-        coll.update({'_id': ObjectId(doc['client_id'])},
-                    {'$set': {'server_id': doc['server_id'],
-                              'transaction_id': doc['transaction_id'],
-                              'commit': False}})
+        for doc in json.loads(res.read()):
+            coll.update({'_id': ObjectId(doc['client_id'])},
+                        {'$set': {'server_id': doc['server_id'],
+                                  'transaction_id': doc['transaction_id'],
+                                  'commit': False}})
+        return "all commited"
+    else:
+        return "nothing to commit"
 
 
-def get_max_transaction_id():
+def get_last_transaction_id():
     try:
         docs = coll.find({'transaction_id': {'$gt': 0}})
         docs = docs.sort('transaction_id', -1).limit(1)
