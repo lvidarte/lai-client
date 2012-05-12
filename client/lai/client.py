@@ -6,6 +6,8 @@ import urllib2
 import json
 import pymongo
 
+from pprint import pprint
+
 try:
     from bson.objectid import ObjectId
 except ImportError:
@@ -45,7 +47,7 @@ def up():
     req = urllib2.urlopen(url)
     data = json.loads(req.read())
     if len(data['docs']):
-        for doc in docs:
+        for doc in data['docs']:
             coll.update({'server_id': doc['server_id']},
                         {'$set': {'transaction_id': doc['transaction_id'],
                                   'data': doc['data']}},
@@ -66,12 +68,12 @@ def ci():
         data = urllib.urlencode({'docs': json.dumps(docs)})
         req = urllib2.Request(url, data)
         res = urllib2.urlopen(req)
-        data = res.read()
+        data = json.loads(res.read())
 
         if 'error' in data:
             return data['error']
         else:
-            for doc in json.loads(data['docs']):
+            for doc in data['docs']:
                 coll.update({'_id': ObjectId(doc['client_id'])},
                             {'$set': {'server_id': doc['server_id'],
                                       'transaction_id': doc['transaction_id'],
@@ -107,7 +109,7 @@ if __name__ == '__main__':
                 rs = globals()[sys.argv[1]](*sys.argv[2:])
             else:
                 rs = globals()[sys.argv[1]]()
-            print rs
+            pprint(rs)
         except KeyError, e:
             print "Method not implemented"
             print e
