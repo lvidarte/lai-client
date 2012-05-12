@@ -18,7 +18,7 @@ def the_response_reason_text_should_be(step, text):
     assert lettuce.world.response.reason == text
 
 
-@lettuce.step(u'Then I should get a json list')
-def i_should_get_a_json_list(step):
-    assert type(lettuce.world.response.data) == list
+@lettuce.step(u'Then I should get a json object')
+def i_should_get_a_json_object(step):
+    assert type(lettuce.world.response.data) == dict
 

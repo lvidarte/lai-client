@@ -8,11 +8,11 @@ Feature: Test Lai
 
     Scenario: Make an update without transaction_id
         When I request the url "/" with the method "GET"
-        Then I should get a json list
+        Then I should get a json object
 
     Scenario: Make an update with transaction_id
         When I request the url "/1" with the method "GET"
-        Then I should get a json list
+        Then I should get a json object
 
     Scenario: Make an update with transaction_id
         When I request the url "/1" with the method "GET"

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-## tid = transaction_id
-
 import tornado.ioloop
 import tornado.web
 import tornado.options
@@ -33,7 +31,7 @@ class MainHandler(tornado.web.RequestHandler):
                     'data':           doc['data']}
             docs.append(_doc)
         self.set_header('Content-Type', 'application/json')
-        self.write(json.dumps(docs))
+        self.write(json.dumps({'docs': docs}))
 
     def post(self, tid=None):
         tid = self._check_tid(tid)
@@ -45,9 +43,9 @@ class MainHandler(tornado.web.RequestHandler):
             for doc in docs:
                 docs_.append(self._process(doc, tid))
             self.set_header('Content-Type', 'application/json')
-            self.write(json.dumps(docs_))
+            self.write(json.dumps({'docs': docs_}))
         else:
-            self.write('you must update first')
+            self.write(json.dumps({'error': 'you must update first'}))
 
     def _process(self, doc, tid):
         _id = str(self.coll.insert({'transaction_id': tid, 'data': doc['data']}))

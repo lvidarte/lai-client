@@ -43,8 +43,8 @@ def delete(*args):
 def up():
     url = "%s/%s" % (config.SERVER, get_last_transaction_id())
     req = urllib2.urlopen(url)
-    docs = json.loads(req.read())
-    if len(docs):
+    data = json.loads(req.read())
+    if len(data['docs']):
         for doc in docs:
             coll.update({'server_id': doc['server_id']},
                         {'$set': {'transaction_id': doc['transaction_id'],
@@ -66,13 +66,17 @@ def ci():
         data = urllib.urlencode({'docs': json.dumps(docs)})
         req = urllib2.Request(url, data)
         res = urllib2.urlopen(req)
+        data = res.read()
 
-        for doc in json.loads(res.read()):
-            coll.update({'_id': ObjectId(doc['client_id'])},
-                        {'$set': {'server_id': doc['server_id'],
-                                  'transaction_id': doc['transaction_id'],
-                                  'commit': False}})
-        return "all commited"
+        if 'error' in data:
+            return data['error']
+        else:
+            for doc in json.loads(data['docs']):
+                coll.update({'_id': ObjectId(doc['client_id'])},
+                            {'$set': {'server_id': doc['server_id'],
+                                      'transaction_id': doc['transaction_id'],
+                                      'commit': False}})
+            return "%d docs commited" % len(data['docs'])
     else:
         return "nothing to commit"
 
