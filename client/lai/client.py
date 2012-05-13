@@ -23,7 +23,13 @@ coll = db[config.DB_COLLECTION]
 
 def get(*args):
     params = {'_id': ObjectId(args[0])} if len(args) else {}
-    return list(coll.find(params))
+    docs = coll.find(params)
+    fmt = "%-24s %-20s %-5s %-5s %-24s %-5s"
+    print fmt % ('_id', 'data', 'ci', 'del', 'sid', 'tid')
+    for doc in docs:
+        print fmt % (doc['_id'], doc['data'], doc.get('commit'),
+                     doc.get('deleted'), doc.get('server_id'),
+                     doc.get('transaction_id'))
 
 
 def add(*args):
@@ -39,22 +45,36 @@ def update(*args):
 
 
 def delete(*args):
-    return coll.remove({'_id': ObjectId(args[0])})
+    _id = ObjectId(args[0])
+    doc = list(coll.find({'_id': _id}))[0]
+    if 'server_id' in doc:
+        coll.update({'_id': _id},
+                    {'$set': {'deleted': True, 'commit': True}})
+    else:
+        coll.remove({'_id': _id})
 
 
-def up():
-    url = "%s/%s" % (config.SERVER, get_last_transaction_id())
+def up(*args):
+    tid = args[0] if len(args) else get_last_transaction_id()
+    url = "%s/%s" % (config.SERVER, tid)
     req = urllib2.urlopen(url)
     data = json.loads(req.read())
     if len(data['docs']):
         for doc in data['docs']:
-            coll.update({'server_id': doc['server_id']},
-                        {'$set': {'transaction_id': doc['transaction_id'],
-                                  'data': doc['data']}},
-                        safe=True, upsert=True)
+            process_update(doc)
         return "updated ok"
     else:
         return "nothing to update"
+
+
+def process_update(doc):
+    if doc['deleted']:
+        coll.remove({'server_id': doc['server_id']})
+    else:
+        coll.update({'server_id': doc['server_id']},
+                    {'$set': {'transaction_id': doc['transaction_id'],
+                              'data': doc['data']}},
+                    safe=True, upsert=True)
 
 
 def ci():
@@ -74,14 +94,21 @@ def ci():
             return data['error']
         else:
             for doc in data['docs']:
-                coll.update({'_id': ObjectId(doc['client_id'])},
-                            {'$set': {'server_id': doc['server_id'],
-                                      'transaction_id': doc['transaction_id'],
-                                      'commit': False}})
+                process_commit(doc)
             return "%d docs commited" % len(data['docs'])
     else:
         return "nothing to commit"
 
+
+def process_commit(doc):
+    _id = ObjectId(doc['client_id'])
+    if 'deleted' in doc and doc['deleted']:
+        coll.remove({'_id': _id})
+    else:
+        coll.update({'_id': _id},
+                    {'$set': {'server_id': doc['server_id'],
+                              'transaction_id': doc['transaction_id'],
+                              'commit': False}})
 
 def get_last_transaction_id():
     try:
