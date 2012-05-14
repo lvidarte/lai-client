@@ -17,7 +17,7 @@ except ImportError:
 
 class Application(tornado.web.Application):
     def __init__(self):
-        handlers = [(r'/(\d+)?', MainHandler)]
+        handlers = [(r'/(\d+)', MainHandler)]
         self.conn = pymongo.Connection(options.db_host, options.db_port)
         self.db = self.conn[options.db_name]
         super(Application, self).__init__(handlers, debug=True)
@@ -28,26 +28,22 @@ class MainHandler(tornado.web.RequestHandler):
         self.coll = self.application.db[options.db_collection]
         self.set_header('Content-Type', 'application/json')
 
-    def get(self, tid=None):
-        tid = self._check_tid(tid)
+    def get(self, tid):
+        tid = int(tid)
         docs = self._get_update_docs(tid)
         self.write(json.dumps({'docs': docs}))
 
     def _get_update_docs(self, tid):
         docs = []
-        params = {'transaction_id': {'$gt': tid}}
-#       if tid == 0:
-#           params['deleted'] = {'$ne': True}
-        for doc in self.coll.find(params):
-            _doc = {'server_id':      str(doc['_id']),
-                    'transaction_id': doc['transaction_id'],
-                    'data':           doc['data'],
-                    'deleted':        doc.get('deleted', False)}
+        for doc in self.coll.find({'tid': {'$gt': tid}}):
+            _doc = {'sid':  str(doc['_id']),
+                    'tid':  doc['tid'],
+                    'data': doc['data']}
             docs.append(_doc)
         return docs
 
-    def post(self, tid=None):
-        tid = self._check_tid(tid)
+    def post(self, tid):
+        tid = int(tid)
         docs = json.loads(self.get_argument('docs'))
         if len(self._get_update_docs(tid)) == 0:
             tid += 1
@@ -59,34 +55,28 @@ class MainHandler(tornado.web.RequestHandler):
         else:
             self.write(json.dumps({'error': 'you must update first'}))
 
-    def _process(self, doc, transaction_id):
-        _doc = {'transaction_id': transaction_id, 'data': doc['data']}
+    def _process(self, doc, tid):
+        _doc = {'tid': tid, 'data': doc['data']}
 
-        # Update/Delete
-        if 'server_id' in doc:
-            if 'deleted' in doc:
-                _doc['deleted'] = True
-            _id  = ObjectId(doc['server_id'])
+        if 'sid' in doc:
+            _id  = ObjectId(doc['sid'])
             self.coll.update({'_id': _id}, {'$set': _doc})
-        # Insert
         else:
             _id  = self.coll.insert(_doc)
 
-        _doc = {'server_id':      str(_id),
-                'client_id':      doc['client_id'],
-                'transaction_id': transaction_id}
-        if 'deleted' in doc:
-            _doc['deleted'] = True
+        _doc = {'sid':      str(_id),
+                'cid':      doc['cid'],
+                'tid': tid}
         return _doc
 
 #   def _get_last_tid(self, docs):
 #       return max(docs, key=lambda doc:doc['tid'])['tid']
 
 #   def _check_db_tid(self, tid):
-#       return not self.coll.find({'transaction_id': {'$gt': tid}}).count()
+#       return not self.coll.find({'tid': {'$gt': tid}}).count()
 
-    def _check_tid(self, tid):
-        return 0 if tid is None else int(tid)
+#   def _get_tid(self, tid):
+#       return 0 if tid is None else int(tid)
 
 
 if __name__ == '__main__':
