@@ -23,12 +23,13 @@ coll = db[config.DB_COLLECTION]
 
 def get(*args):
     params = {'_id': ObjectId(args[0])} if len(args) else {}
-    docs = coll.find(params)
-    return list(docs)
+    return list(coll.find(params))
+
 
 def add(*args):
+    # Search for a doc without data
     docs = list(coll.find({'data': ''}).limit(1))
-    if docs:
+    if len(docs) == 1:
         _id = docs[0]['_id']
         coll.update({'_id': _id}, {'$set': {'data': args[0], 'commit': True}})
     else:
@@ -40,19 +41,22 @@ def add(*args):
 def update(*args):
     _id = ObjectId(args[0])
     data = args[1]
-    return coll.update({'_id': _id},
-                       {'$set': {'data': data, 'commit': True}})
+    rs = coll.update({'_id': _id},
+                     {'$set': {'data': data, 'commit': True}},
+                     safe=True)
+    return rs['n'] == 1
 
 
 def delete(*args):
     _id = ObjectId(args[0])
     doc = list(coll.find({'_id': _id}))[0]
     if doc['sid']:
-        coll.update({'_id': _id},
-                    {'$set': {'data': '', 'commit': True}})
+        rs = coll.update({'_id': _id},
+                         {'$set': {'data': '', 'commit': True}},
+                         safe=True)
     else:
-        coll.remove({'_id': _id})
-    return "deleted"
+        rs = coll.remove({'_id': _id}, safe=True)
+    return rs['n'] == 1
 
 
 def up(*args):
@@ -62,18 +66,19 @@ def up(*args):
     data = json.loads(req.read())
     if len(data['docs']):
         for doc in data['docs']:
-            process_update(doc)
-        return "updated ok"
+            rs = process_update(doc)
+            print "%s %s" % (doc['sid'], rs['n'] == 1)
+        return "%d docs updated" % len(data['docs'])
     else:
         return "nothing to update"
 
 
 def process_update(doc):
-    coll.update({'sid': doc['sid']},
-                {'$set': {'tid': doc['tid'],
-                          'commit': False,
-                          'data': doc['data']}},
-                safe=True, upsert=True)
+    return coll.update({'sid': doc['sid']},
+                       {'$set': {'tid': doc['tid'],
+                                 'commit': False,
+                                 'data': doc['data']}},
+                       safe=True, upsert=True)
 
 
 def ci():
@@ -93,7 +98,8 @@ def ci():
             return data['error']
         else:
             for doc in data['docs']:
-                process_commit(doc)
+                rs = process_commit(doc)
+                print "%s %s" % (doc['cid'], rs['n'] == 1)
             return "%d docs commited" % len(data['docs'])
     else:
         return "nothing to commit"
@@ -101,10 +107,11 @@ def ci():
 
 def process_commit(doc):
     _id = ObjectId(doc['cid'])
-    coll.update({'_id': _id},
-                {'$set': {'sid': doc['sid'],
-                          'tid': doc['tid'],
-                          'commit': False}})
+    return coll.update({'_id': _id},
+                       {'$set': {'sid': doc['sid'],
+                                 'tid': doc['tid'],
+                                 'commit': False}},
+                       safe=True)
 
 def get_last_tid():
     try:
@@ -132,8 +139,9 @@ if __name__ == '__main__':
             else:
                 rs = globals()[sys.argv[1]]()
 
+            # Print
             if type(rs) == list:
-                fmt = "%-24s %-24s %-5s %-5s %-20s"
+                fmt = "%-24s | %-24s | %-5s | %-5s | %s"
                 print fmt % ('_id', 'sid', 'tid', 'ci', 'data')
                 for doc in rs:
                     print fmt % (doc['_id'], doc['sid'], doc['tid'],
