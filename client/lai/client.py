@@ -24,13 +24,7 @@ coll = db[config.DB_COLLECTION]
 def get(*args):
     params = {'_id': ObjectId(args[0])} if len(args) else {}
     docs = coll.find(params)
-    fmt = "%-24s %-24s %-5s %-5s %-20s"
-    print fmt % ('_id', 'sid', 'tid', 'ci', 'data')
-    for doc in docs:
-        print fmt % (doc['_id'], doc['sid'], doc['tid'],
-                     doc['commit'], doc['data'])
-    return ''
-
+    return list(docs)
 
 def add(*args):
     docs = list(coll.find({'data': ''}).limit(1))
@@ -58,6 +52,7 @@ def delete(*args):
                     {'$set': {'data': '', 'commit': True}})
     else:
         coll.remove({'_id': _id})
+    return "deleted"
 
 
 def up(*args):
@@ -136,7 +131,17 @@ if __name__ == '__main__':
                 rs = globals()[sys.argv[1]](*sys.argv[2:])
             else:
                 rs = globals()[sys.argv[1]]()
-            pprint(rs)
+
+            if type(rs) == list:
+                fmt = "%-24s %-24s %-5s %-5s %-20s"
+                print fmt % ('_id', 'sid', 'tid', 'ci', 'data')
+                for doc in rs:
+                    print fmt % (doc['_id'], doc['sid'], doc['tid'],
+                                 doc['commit'], doc['data'])
+            elif type(rs) == dict:
+                pprint(rs)
+            else:
+                print rs
         except KeyError, e:
             print "Method not implemented"
             print e

@@ -34,15 +34,15 @@ class TestClient(unittest.TestCase):
         assert docs[0]['data'] == new_data
         assert str(docs[0]['_id']) == self.id
 
-    def test_get_last_transaction_id(self):
-        assert type(lai.client.get_last_transaction_id()) == int
+    def test_get_last_tid(self):
+        assert type(lai.client.get_last_tid()) == int
 
     def test_get_doc_for_commit(self):
         _doc = {'_id': 1,
-                'transaction_id': 2,
-                'client_id': 2, 
+                'tid': 2,
+                'cid': 2, 
                 'data': 'sarasa'}
         doc = lai.client.get_doc_for_commit(_doc)
         for key, value in doc.items():
-            assert key in ('server_id', 'transaction_id', 'client_id', 'data')
+            assert key in ('sid', 'tid', 'cid', 'data')
 
