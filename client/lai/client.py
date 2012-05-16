@@ -138,8 +138,10 @@ if __name__ == '__main__':
                 rs = globals()[sys.argv[1]](*sys.argv[2:])
             else:
                 rs = globals()[sys.argv[1]]()
-
-            # Print
+        except KeyError, e:
+            print "Method not implemented"
+            print e
+        else:
             if type(rs) == list:
                 fmt = "%-24s | %-24s | %-5s | %-5s | %s"
                 print fmt % ('_id', 'sid', 'tid', 'ci', 'data')
@@ -150,8 +152,5 @@ if __name__ == '__main__':
                 pprint(rs)
             else:
                 print rs
-        except KeyError, e:
-            print "Method not implemented"
-            print e
     else:
         print "Usage: lai METHOD [arg1 [, argn]]"
