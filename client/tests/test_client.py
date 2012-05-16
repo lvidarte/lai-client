@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-import json
 from lai import config
 
 config.DB_COLLECTION = 'docs_test'
@@ -27,9 +26,9 @@ class TestClient(unittest.TestCase):
         docs = lai.client.get(self.id)
         assert type(docs) == list
 
-    def test_update(self):
+    def test_put(self):
         new_data = "Other testing data"
-        lai.client.update(self.id, new_data)
+        lai.client.put(self.id, new_data)
         docs = lai.client.get(self.id)
         assert docs[0]['data'] == new_data
         assert str(docs[0]['_id']) == self.id

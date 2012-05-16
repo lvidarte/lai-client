@@ -21,6 +21,10 @@ db   = conn[config.DB_NAME]
 coll = db[config.DB_COLLECTION]
 
 
+def search(regex):
+    return list(coll.find({'data': {'$regex': regex}}))
+
+
 def get(*args):
     params = {'_id': ObjectId(args[0])} if len(args) else {}
     return list(coll.find(params))
@@ -38,7 +42,7 @@ def add(*args):
     return _id
 
 
-def update(*args):
+def put(*args):
     _id = ObjectId(args[0])
     data = args[1]
     rs = coll.update({'_id': _id},
@@ -59,7 +63,7 @@ def delete(*args):
     return rs['n'] == 1
 
 
-def up(*args):
+def update(*args):
     tid = args[0] if len(args) else get_last_tid()
     url = "%s/%s" % (config.SERVER, tid)
     req = urllib2.urlopen(url)
@@ -81,7 +85,7 @@ def process_update(doc):
                        safe=True, upsert=True)
 
 
-def ci():
+def commit():
     url = "%s/%s" % (config.SERVER, get_last_tid())
 
     docs = []
@@ -113,6 +117,7 @@ def process_commit(doc):
                                  'commit': False}},
                        safe=True)
 
+
 def get_last_tid():
     try:
         docs = coll.find({'tid': {'$gt': 0}})
@@ -131,26 +136,62 @@ def get_doc_for_commit(doc):
     return _doc
 
 
+def print_result(rs):
+    if type(rs) == list:
+        fmt = "%-24s | %-24s | %-5s | %-5s | %s"
+        print fmt % ('_id', 'sid', 'tid', 'ci', 'data')
+        for doc in rs:
+            print fmt % (doc['_id'], doc['sid'], doc['tid'],
+                         doc['commit'], doc['data'])
+    elif type(rs) == dict:
+        pprint(rs)
+    elif rs is not None:
+        print rs
+
+
+def print_help(msg=None):
+    if msg:
+        print msg
+        print
+    print "Usage: lai regex                 Performs a regex search"
+    print "       lai --add 'Text.'         Add new document"
+    print "       lai --get [ID]            Get all or specific document"
+    print "       lai --put ID 'New text'   Update document"
+    print "       lai --del ID              Delete document"
+    print "       lai --update              Update changes"
+    print "       lai --commit              Commit changes"
+
+
+METHODS = {
+    'get'    : get,
+    'add'    : add,
+    'put'    : put,
+    'del'    : delete,
+    'delete' : delete,
+    'commit' : commit,
+    'ci'     : commit,
+    'update' : update,
+    'up'     : update,
+    'help'   : print_help,
+}
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        try:
-            if len(sys.argv) > 2:
-                rs = globals()[sys.argv[1]](*sys.argv[2:])
+        rs = None
+        if sys.argv[1].startswith('--'):
+            try:
+                fn = METHODS[sys.argv[1][2:]]
+            except KeyError:
+                print_help("Method not implemented.")
             else:
-                rs = globals()[sys.argv[1]]()
-        except KeyError, e:
-            print "Method not implemented"
-            print e
+                if len(sys.argv) > 2:
+                    rs = fn(*sys.argv[2:])
+                else:
+                    rs = fn()
         else:
-            if type(rs) == list:
-                fmt = "%-24s | %-24s | %-5s | %-5s | %s"
-                print fmt % ('_id', 'sid', 'tid', 'ci', 'data')
-                for doc in rs:
-                    print fmt % (doc['_id'], doc['sid'], doc['tid'],
-                                 doc['commit'], doc['data'])
-            elif type(rs) == dict:
-                pprint(rs)
-            else:
-                print rs
+            rs = search(sys.argv[1])
+        print_result(rs)
     else:
-        print "Usage: lai METHOD [arg1 [, argn]]"
+        print_help()
+
