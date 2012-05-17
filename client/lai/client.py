@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 import urllib
 import urllib2
 import json
 import pymongo
+import tempfile
+import codecs
 
 from pprint import pprint
 
@@ -27,7 +30,13 @@ def search(regex):
 
 def get(*args):
     params = {'_id': ObjectId(args[0])} if len(args) else {}
-    return list(coll.find(params))
+    docs = []
+    for doc in coll.find(params):
+        if len(doc['data']) > 40:
+            data = doc['data'].split()
+            doc['data'] = ' '.join(data[:10]) + '..'
+        docs.append(doc)
+    return docs
 
 
 def add(*args):
@@ -53,7 +62,7 @@ def put(*args):
 
 def delete(*args):
     _id = ObjectId(args[0])
-    doc = list(coll.find({'_id': _id}))[0]
+    doc = coll.find_one({'_id': _id})
     if doc['sid']:
         rs = coll.update({'_id': _id},
                          {'$set': {'data': '', 'commit': True}},
@@ -136,6 +145,31 @@ def get_doc_for_commit(doc):
     return _doc
 
 
+def editor(*args):
+    if len(args):
+        _id = ObjectId(args[0])
+        doc = coll.find_one({'_id': _id})
+    else:
+        _id = None
+        doc = None
+
+    (_, filename) = tempfile.mkstemp()
+
+    if doc:
+        file = codecs.open(filename, 'w', encoding='utf8')
+        file.write(doc['data'])
+        file.close()
+
+    if os.system(os.getenv('EDITOR') + " " + filename) == 0:
+        data = codecs.open(filename, 'r', encoding='utf8').read()
+        if _id:
+            put(_id, data)
+        else:
+            add(data)
+
+    os.unlink(filename)
+
+
 def print_result(rs):
     if type(rs) == list:
         fmt = "%-24s | %-24s | %-5s | %-5s | %s"
@@ -154,25 +188,27 @@ def print_help(msg=None):
         print msg
         print
     print "Usage: lai regex                 Performs a regex search"
-    print "       lai --add 'Text.'         Add new document"
-    print "       lai --get [ID]            Get all or specific document"
-    print "       lai --put ID 'New text'   Update document"
-    print "       lai --del ID              Delete document"
+    print "       lai --add 'Text.'         Add new doc"
+    print "       lai --get [ID]            Get all or a specific doc"
+    print "       lai --put ID 'New text'   Update doc"
+    print "       lai --editor [ID]         Add or Update doc with default text editor"
+    print "       lai --del ID              Delete doc"
     print "       lai --update              Update changes"
     print "       lai --commit              Commit changes"
 
 
 METHODS = {
-    'get'    : get,
-    'add'    : add,
-    'put'    : put,
-    'del'    : delete,
-    'delete' : delete,
-    'commit' : commit,
-    'ci'     : commit,
-    'update' : update,
-    'up'     : update,
-    'help'   : print_help,
+    '--get'    : get,
+    '--add'    : add,
+    '--put'    : put,
+    '--del'    : delete,
+    '--delete' : delete,
+    '--commit' : commit,
+    '--ci'     : commit,
+    '--update' : update,
+    '--up'     : update,
+    '--help'   : print_help,
+    '--editor' : editor,
 }
 
 
@@ -181,7 +217,7 @@ if __name__ == '__main__':
         rs = None
         if sys.argv[1].startswith('--'):
             try:
-                fn = METHODS[sys.argv[1][2:]]
+                fn = METHODS[sys.argv[1]]
             except KeyError:
                 print_help("Method not implemented.")
             else:
