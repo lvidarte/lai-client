@@ -1,31 +1,25 @@
 # -*- coding: utf-8 -*-
 
-from database import Database
-
 
 class Client:
 
-    database = Database()
+    def __init__(self, database):
+        self.db = database
 
-    @classmethod
-    def update(cls):
+    def update(self):
         pass
 
-    @classmethod
-    def commit(cls):
+    def commit(self):
         pass
 
-    @classmethod
-    def save(cls):
+    def save(self):
         pass
 
-    @classmethod
-    def delete(cls):
+    def delete(self):
         pass
 
-    @classmethod
-    def search(cls, regex):
-        return cls.database.search(regex)
+    def search(self, regex):
+        return self.db.search(regex)
 
     def fetch(self, data=None):
         #url = self.get_url()
@@ -38,6 +32,8 @@ class Client:
 
 
 if __name__ == '__main__':
-    docs = Client.search('')
+    from lai import Database
+    client = Client(Database())
+    docs = client.search('')
     for doc in docs:
         print doc

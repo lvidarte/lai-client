@@ -8,4 +8,5 @@ Requirements/Use:
 
 2. CLIENT
  * pymongo
+ * mockito
 

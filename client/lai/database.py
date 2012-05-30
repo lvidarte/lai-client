@@ -17,7 +17,7 @@ class Database:
 
     @classmethod
     def search(cls, regex):
-        return cls.coll.find({'data': {'$regex': regex}})
+        return list(cls.coll.find({'data': {'$regex': regex}}))
 
 
 if __name__ == '__main__':
