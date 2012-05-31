@@ -32,8 +32,9 @@ class Client:
 
 
 if __name__ == '__main__':
-    from lai import Database
-    client = Client(Database())
+    from database import Database
+    database = Database()
+    client = Client(database)
     docs = client.search('')
     for doc in docs:
         print doc
