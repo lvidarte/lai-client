@@ -12,8 +12,8 @@ class Client:
     def commit(self):
         pass
 
-    def save(self):
-        pass
+    def save(self, document):
+        return self.db.save(document)
 
     def delete(self):
         pass

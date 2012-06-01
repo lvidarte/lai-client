@@ -22,6 +22,17 @@ class Data(dict):
         else:
             return []
 
+class DataUnicode(unicode):
+    pass
+
+
+class Data2:
+    def __new__(cls, data, key=None):
+        if type(data) in (str, unicode):
+            return DataUnicode(data)
+        if type(data) is dict:
+            return Data(data, key)
+
 
 if __name__ == '__main__':
     d = Data('{"text": "Lorem ipsum dolor sit amet.", "value": 2}', key='text')

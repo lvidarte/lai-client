@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import json
 import config
 from data import Data
 
@@ -9,6 +10,12 @@ class Document:
     users = []
     usersdel = []
 
+    def __init__(self, data):
+        for key, value in data.items():
+            setattr(self, key, value)
+
+
+    """
     def __init__(self, data, key=None, id=None, sid=None, tid=None, synched=True,
                  keys=None, users=None, usersdel=None):
         self.data = Data(data, key)
@@ -18,6 +25,7 @@ class Document:
         self.synched = synched
         if users is None and usersdel is None:
             self.add_user(config.USER)
+    """
 
     def get_dict(self):
         return {
