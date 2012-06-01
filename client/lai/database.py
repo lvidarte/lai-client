@@ -11,7 +11,13 @@ import config
 
 
 class DatabaseBase(object):
-    """Abstract class"""
+
+    def __init__(self, host=None, port=None, name=None, table=None):
+        self.host  = host  or config.DB_HOST
+        self.port  = port  or config.DB_PORT
+        self.name  = name  or config.DB_NAME
+        self.table = table or config.DB_TABLE
+        self.connect()
 
     def connect(self):
         raise NotImplementedError('connect not implemented')
@@ -20,42 +26,35 @@ class DatabaseBase(object):
         raise NotImplementedError('search not implemented')
 
     def __str__(self):
-        raise NotImplementedError('__str__ not implemented')
+        return "%s://%s:%s/%s?%s" % (self.engine, self.host, self.port,
+                                     self.name, self.table)
 
 
 class DatabaseMongo(DatabaseBase):
 
-    def __init__(self, host=None, port=None, name=None, collection=None):
-        self.host = host or config.DB_HOST
-        self.port = port or config.DB_PORT
-        self.name = name or config.DB_NAME
-        self.collection = collection or config.DB_COLLECTION
-        self.connect()
+    engine = "mongo"
 
     def connect(self):
         self.connection = pymongo.Connection(self.host, self.port)
         self.db = self.connection[self.name]
-        self.coll = self.db[self.collection]
+        self.collection = self.db[self.table]
 
     def search(self, regex):
-        return list(self.coll.find({'data': {'$regex': regex}}))
+        return list(self.collection.find({'data': {'$regex': regex}}))
 
-    def __str__(self):
-        return "mongodb://%s:%s/%s?%s" % (self.host, self.port,
-                                          self.name, self.collection)
 
 
 class DatabaseMySQL(DatabaseBase):
     pass
 
 
-ENGINES = {'mongodb': DatabaseMongo,
-           'mysql'  : DatabaseMySQL,}
+ENGINES = {'mongo': DatabaseMongo,
+           'mysql': DatabaseMySQL,}
 
 
 class Database(object):
-
     """Factory class"""
+
     def __new__(cls, engine=None, *args, **kwargs):
         try:
             return ENGINES[engine or config.DB_ENGINE](*args, **kwargs)
@@ -65,6 +64,6 @@ class Database(object):
 
 
 if __name__ == '__main__':
-    database = Database('mongodb')
+    database = Database('mongo')
     for doc in database.search(''):
         print doc

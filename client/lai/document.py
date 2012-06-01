@@ -1,21 +1,23 @@
 # -*- coding: utf-8 -*-
 
+import config
 from data import Data
 
 
 class Document:
 
-    def __init__(self, data, id=None, tid=None,
-                 sid=None, synched=True, keys=None,
-                 users=None, usersdel=None):
-        self.data = Data(data)
-        self.id = id
-        self.tid = tid
-        self.sid = sid
+    users = []
+    usersdel = []
+
+    def __init__(self, data, key=None, id=None, sid=None, tid=None, synched=True,
+                 keys=None, users=None, usersdel=None):
+        self.data = Data(data, key)
+        self.id   = id
+        self.sid  = sid
+        self.tid  = tid
         self.synched = synched
-        self.keys = keys or ''
-        self.users = users or []
-        self.usersdel = usersdel or []
+        if users is None and usersdel is None:
+            self.add_user(config.USER)
 
     def get_dict(self):
         return {
@@ -23,13 +25,26 @@ class Document:
            'sid'     : self.sid,
            'tid'     : self.tid,
            'data'    : self.data,
-           'keys'    : self.keys,
+           'keys'    : self.data.keys,
            'synched' : self.synched,
            'users'   : self.users,
            'usersdel': self.usersdel,
         }
 
+    def add_user(self, user):
+        if user not in self.users:
+            self.users.append(user)
+        if user in self.usersdel:
+            del self.usersdel[self.usersdel.index(user)]
+
+    def del_user(self, user):
+        if user not in self.usersdel:
+            self.usersdel.append(user)
+        if user in self.users:
+            del self.users[self.users.index(user)]
+
+
 
 if __name__ == '__main__':
-    doc = Document('{"x": 0, "y": 1}')
-    print doc.data.dumps()
+    doc = Document('{"text": "Lorem ipsum dolor sit amet.", "value": 2}', key='text')
+    print doc.get_dict()
