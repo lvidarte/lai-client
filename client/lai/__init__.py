@@ -1,5 +1,5 @@
-__all__ = ['config', 'Client', 'Database', 'Document', 'Data']
+__all__ = ['config', 'Client', 'DBSqlite', 'Document', 'Data']
 from client import Client
-from database import Database
 from document import Document
 from data import Data
+from db.sqlite import DBSqlite 

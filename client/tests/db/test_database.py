@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-
-from lai import Database
+import config
+from lai.database.database import Database
 
 
 class TestDatabaseMongo(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestDatabaseMongo(unittest.TestCase):
         pass
 
     def test_search(self):
-        database = Database('mongo')
+        database = Database('mongo', config)
         result = database.search('')
         self.assertEquals(type(result), list)
 

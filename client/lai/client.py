@@ -32,8 +32,8 @@ class Client:
 
 
 if __name__ == '__main__':
-    from database import Database
-    database = Database()
+    from database.database import Database
+    database = Database('mongo')
     client = Client(database)
     docs = client.search('')
     for doc in docs:
