@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import json
-import config
-from data import Data
+#import json
+#from lai import config
 
 
 class Document:

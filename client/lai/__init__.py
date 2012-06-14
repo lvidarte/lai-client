@@ -1,5 +1,5 @@
-__all__ = ['config', 'Client', 'DBSqlite', 'Document', 'Data']
-from client import Client
-from document import Document
-from data import Data
-from db.sqlite import DBSqlite 
+__all__ = ['config', 'Client', 'Database', 'Document', 'Data']
+from lai.client import Client
+from lai.document import Document
+from lai.data import Data
+from lai.database import Database

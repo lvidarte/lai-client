@@ -1,7 +1,11 @@
 import unittest
 import os.path
-import config_sqlite
-from db import DBSqlite
+from lai.db import DBSqlite
+
+
+config = {'NAME': 'lai.db',
+          'TABLE': 'client1'}
+
 
 class TestDBSqlite(unittest.TestCase):
 
@@ -9,6 +13,6 @@ class TestDBSqlite(unittest.TestCase):
         pass
 
     def test_connect_should_create_dbfile(self):
-        db = DBSqlite(config_sqlite)
-        self.assertTrue(os.path.exists(config_sqlite.DB_NAME))
+        db = DBSqlite(config)
+        self.assertTrue(os.path.exists(config['NAME']))
 

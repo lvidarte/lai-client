@@ -1,6 +1,9 @@
-from base import DatabaseBase
+# -*- coding: utf-8 -*-
 
-class DatabaseMySQL(DatabaseBase):
+from lai.db.base import DBBase
+
+
+class DBMySQL(DBBase):
     pass
 
 

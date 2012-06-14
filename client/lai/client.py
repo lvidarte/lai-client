@@ -32,8 +32,12 @@ class Client:
 
 
 if __name__ == '__main__':
-    from database.database import Database
-    database = Database('mongo')
+    from lai import Database
+    config = {'HOST': 'localhost',
+              'PORT': 27017,
+              'NAME': 'lai',
+              'TABLE': 'test'}
+    database = Database('mongo', config)
     client = Client(database)
     docs = client.search('')
     for doc in docs:

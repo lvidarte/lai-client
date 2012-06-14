@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+"""
 import unittest
 import config
 from lai.database.database import Database
@@ -20,3 +21,4 @@ class TestDatabaseMongo(unittest.TestCase):
         result = database.search('')
         self.assertEquals(type(result), list)
 
+"""

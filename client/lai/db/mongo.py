@@ -1,26 +1,29 @@
+# -*- coding: utf-8 -*-
+
 import pymongo
-from base import DatabaseBase
+from lai.db.base import DBBase
 
 try:
     from bson.objectid import ObjectId
 except ImportError:
     from pymongo.objectid import ObjectId
 
-class DatabaseMongo(DatabaseBase):
 
-    #engine = "mongo"
+class DBMongo(DBBase):
 
     def connect(self): 
-        self.host  = self._config.DB_HOST
-        self.port  = self._config.DB_PORT
-        self.name  = self._config.DB_NAME
-        self.table = self._config.DB_TABLE
-
-        self.connection = pymongo.Connection(self.host, self.port)
-        self.db = self.connection[self.name]
-        self.collection = self.db[self.table]
+        self.connection = pymongo.Connection(self.config['HOST'],
+                                             self.config['PORT'])
+        self.db = self.connection[self.config['NAME']]
+        self.collection = self.db[self.config['TABLE']]
 
     def search(self, regex):
         return list(self.collection.find({'data': {'$regex': regex}}))
 
+    def __str__(self):
+        return "%s://%s:%s/%s?%s" % ('mongo',
+                                     self.config['HOST'],
+                                     self.config['PORT'],
+                                     self.config['NAME'],
+                                     self.config['TABLE'])
 
