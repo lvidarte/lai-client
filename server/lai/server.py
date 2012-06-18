@@ -17,7 +17,7 @@ except ImportError:
 
 class Application(tornado.web.Application):
     def __init__(self):
-        handlers = [(r'/(\d+)', MainHandler)]
+        handlers = [(r'/(\w+)/(\d+)', MainHandler)]
         self.conn = pymongo.Connection(options.db_host, options.db_port)
         self.db = self.conn[options.db_name]
         super(Application, self).__init__(handlers, debug=True)
@@ -28,24 +28,32 @@ class MainHandler(tornado.web.RequestHandler):
         self.coll = self.application.db[options.db_collection]
         self.set_header('Content-Type', 'application/json')
 
-    def get(self, tid):
+    def get(self, user, tid):
         tid = int(tid)
-        docs = self._get_update_docs(tid)
+        docs = self._get_update_docs(user, tid)
         self.write(json.dumps({'docs': docs}))
 
-    def _get_update_docs(self, tid):
+    def _get_update_docs(self, user, tid):
         docs = []
-        for doc in self.coll.find({'tid': {'$gt': tid}}):
-            _doc = {'sid':  str(doc['_id']),
-                    'tid':  doc['tid'],
-                    'data': doc['data']}
+        cur = self.coll.find({'tid': {'$gt': tid},
+                              '$or': [{'users':    {'$in': [user]}},
+                                      {'usersdel': {'$in': [user]}}]
+                             })
+
+        for doc in cur:
+            _doc = {'sid'     : str(doc['_id']),
+                    'tid'     : doc['tid'],
+                    'data'    : doc['data'],
+                    'users'   : doc['users'],
+                    'usersdel': doc['usersdel'],
+                    'keys'    : doc['keys']}
             docs.append(_doc)
         return docs
 
-    def post(self, tid):
+    def post(self, user, tid):
         tid = int(tid)
         docs = json.loads(self.get_argument('docs'))
-        if len(self._get_update_docs(tid)) == 0:
+        if len(self._get_update_docs(user, tid)) == 0:
             tid += 1
             _docs = []
             for doc in docs:
@@ -56,7 +64,11 @@ class MainHandler(tornado.web.RequestHandler):
             self.write(json.dumps({'error': 'you must update first'}))
 
     def _process(self, doc, tid):
-        _doc = {'tid': tid, 'data': doc['data']}
+        _doc = {'tid'     : tid,
+                'data'    : doc['data'],
+                'users'   : doc['users'],
+                'usersdel': doc['usersdel'],
+                'keys'    : doc['keys']}
 
         if 'sid' in doc:
             _id  = ObjectId(doc['sid'])
@@ -64,28 +76,17 @@ class MainHandler(tornado.web.RequestHandler):
         else:
             _id  = self.coll.insert(_doc)
 
-        _doc = {'sid':      str(_id),
-                'cid':      doc['cid'],
+        _doc = {'sid': str(_id),
+                'cid': doc['cid'],
                 'tid': tid}
         return _doc
-
-#   def _get_last_tid(self, docs):
-#       return max(docs, key=lambda doc:doc['tid'])['tid']
-
-#   def _check_db_tid(self, tid):
-#       return not self.coll.find({'tid': {'$gt': tid}}).count()
-
-#   def _get_tid(self, tid):
-#       return 0 if tid is None else int(tid)
 
 
 if __name__ == '__main__':
     tornado.options.parse_config_file('lai/config.py')
     tornado.options.parse_command_line()
-
     application = Application()
     application.listen(options.port)
-
     logging.info('lai server started')
     tornado.ioloop.IOLoop.instance().start()
 

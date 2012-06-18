@@ -17,6 +17,14 @@ class DBMongo(DBBase):
         self.db = self.connection[self.config['NAME']]
         self.collection = self.db[self.config['TABLE']]
 
+    def get_last_tid(self):
+        try:
+            docs = self.collection.find({'tid': {'$gt': 0}})
+            docs = docs.sort('tid', -1).limit(1)
+            return int(docs.next()['tid'])
+        except StopIteration:
+            return 0
+
     def search(self, regex):
         return list(self.collection.find({'data': {'$regex': regex}}))
 

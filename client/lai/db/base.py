@@ -10,6 +10,9 @@ class DBBase(object):
     def connect(self):
         raise NotImplementedError('connect not implemented')
 
+    def get_last_tid(self):
+        raise NotImplementedError('get_last_tid not implemented')
+
     def search(self, regex):
         raise NotImplementedError('search not implemented')
 

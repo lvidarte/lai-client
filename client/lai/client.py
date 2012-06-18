@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from lai import config
+
 
 class Client:
 
@@ -29,6 +31,10 @@ class Client:
             #GET
         #return json.loads(data)
         pass
+
+    def get_url(self):
+        tid = self.db.get_last_tid()
+        return "%s/%s/%s" % (config.SERVER, config.USER, tid)
 
 
 if __name__ == '__main__':
