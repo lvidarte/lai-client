@@ -13,10 +13,13 @@ class DBBase(object):
     def get_last_tid(self):
         raise NotImplementedError('get_last_tid not implemented')
 
-    def get(self, document):
+    def get(self, doc):
         raise NotImplementedError('get not implemented')
 
-    def save(self, document):
+    def save(self, doc):
+        raise NotImplementedError('save not implemented')
+
+    def update(self, doc):
         raise NotImplementedError('save not implemented')
 
     def search(self, regex):

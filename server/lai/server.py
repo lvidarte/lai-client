@@ -57,7 +57,7 @@ class MainHandler(tornado.web.RequestHandler):
             tid += 1
             _docs = []
             for doc in docs:
-                _doc = self._process(doc, user, tid)
+                _doc = self._process(doc, tid)
                 _docs.append(_doc)
             self.write(json.dumps({'docs': _docs}))
         else:
@@ -70,14 +70,14 @@ class MainHandler(tornado.web.RequestHandler):
                 'usersdel': doc['usersdel'],
                 'keys'    : doc['keys']}
 
-        if 'sid' in doc:
+        if doc['sid'] is not None:
             _id  = ObjectId(doc['sid'])
             self.coll.update({'_id': _id}, {'$set': _doc})
         else:
             _id  = self.coll.insert(_doc)
 
-        _doc = {'sid': str(_id),
-                'cid': doc['cid'],
+        _doc = {'id' : doc['id'],
+                'sid': str(_id),
                 'tid': tid}
         return _doc
 

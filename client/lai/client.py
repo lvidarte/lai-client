@@ -13,10 +13,26 @@ class Client:
         self.db = database
 
     def update(self):
-        pass
+        data = self.fetch()
+        if len(data['docs']):
+            for doc in data['docs']:
+                self.db.update(doc, synched=True, pk='sid')
+            return 'ok'
+        else:
+            return 'nothing to update'
 
     def commit(self):
-        pass
+        docs = self.db.get_docs_for_commit()
+        if len(docs):
+            data = self.fetch(docs)
+            if 'error' in data:
+                return data['error']
+            else:
+                for doc in data['docs']:
+                    self.db.update(doc, synched=True)
+                return 'ok'
+        else:
+            return 'nothing to commit'
 
     def get(self, id):
         return self.db.get(id)
