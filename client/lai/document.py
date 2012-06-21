@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#import json
-#from lai import config
+from lai import config
 
 
 class Document:
@@ -9,34 +8,19 @@ class Document:
     users = []
     usersdel = []
 
-    def __init__(self, data):
-        for key, value in data.items():
-            setattr(self, key, value)
-
-
-    """
-    def __init__(self, data, key=None, id=None, sid=None, tid=None, synched=True,
+    def __init__(self, data=None, id=None, sid=None, tid=None,
                  keys=None, users=None, usersdel=None):
-        self.data = Data(data, key)
-        self.id   = id
-        self.sid  = sid
-        self.tid  = tid
-        self.synched = synched
+        self.data = data
+        self.keys = keys
+        self.id  = id
+        self.sid = sid
+        self.tid = tid
         if users is None and usersdel is None:
             self.add_user(config.USER)
-    """
 
-    def get_dict(self):
-        return {
-           'id'      : self.id,
-           'sid'     : self.sid,
-           'tid'     : self.tid,
-           'data'    : self.data,
-           'keys'    : self.data.keys,
-           'synched' : self.synched,
-           'users'   : self.users,
-           'usersdel': self.usersdel,
-        }
+    def set(self, data_dict):
+        for key, value in data_dict.items():
+            setattr(self, key, value)
 
     def add_user(self, user):
         if user not in self.users:
@@ -50,8 +34,10 @@ class Document:
         if user in self.users:
             del self.users[self.users.index(user)]
 
+    def __str__(self):
+        return self.data
 
 
 if __name__ == '__main__':
-    doc = Document('{"text": "Lorem ipsum dolor sit amet.", "value": 2}', key='text')
-    print doc.get_dict()
+    doc = Document('Lorem ipsum dolor sit amet.', keys='lorem ipsum amet')
+    print doc
