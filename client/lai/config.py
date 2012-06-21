@@ -1,6 +1,6 @@
 SERVER = "http://localhost:8888"
 
-USER = "lvidarte"
+USER = "xleo"
 
 DATABASE = {
     'ENGINE': 'mongo',

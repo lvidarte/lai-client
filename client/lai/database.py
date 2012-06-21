@@ -19,5 +19,5 @@ class Database(object):
             from lai.db import DBMongo
             return DBMongo(config)
         else:
-            raise Exception('Invalid engine %s. Valids: %s' % (engine, ENGINES.keys()))
+            raise Exception('Invalid engine ' + engine)
 
