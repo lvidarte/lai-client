@@ -57,7 +57,7 @@ class MainHandler(tornado.web.RequestHandler):
             tid += 1
             _docs = []
             for doc in docs:
-                _doc = self._process(doc, tid)
+                _doc = self._process(doc, user, tid)
                 _docs.append(_doc)
             self.write(json.dumps({'docs': _docs}))
         else:

@@ -2,6 +2,7 @@
 
 import pymongo
 from lai.db.base import DBBase
+from lai import Document
 
 try:
     from bson.objectid import ObjectId
@@ -18,18 +19,43 @@ class DBMongo(DBBase):
         self.collection = self.db[self.config['TABLE']]
 
     def get_last_tid(self):
-        try:
-            docs = self.collection.find({'tid': {'$gt': 0}})
-            docs = docs.sort('tid', -1).limit(1)
-            return int(docs.next()['tid'])
-        except StopIteration:
+        doc = self.collection.find_one({'tid': {'$gt': 0}}, sort=[('tid', -1)])
+        if doc:
+            return doc['tid']
+        else:
             return 0
 
     def search(self, regex):
         return list(self.collection.find({'data': {'$regex': regex}}))
 
+    def get(self, id):
+        rs = self.collection.find_one({'_id': ObjectId(id)})
+        if rs:
+            document = Document()
+            document.set(rs)
+            document.id = str(rs['_id'])
+            return document
+
+    def save(self, document):
+        doc = {
+            'sid'     : document.sid,
+            'tid'     : document.tid,
+            'data'    : document.data,
+            'keys'    : document.keys,
+            'users'   : document.users,
+            'usersdel': document.usersdel,
+            'synched' : False,
+        }
+        if document.id:
+            _id = ObjectId(document.id)
+            rs = self.collection.update({'_id': _id}, {'$set': doc}, safe=True)
+            return rs['n'] == 1
+        else:
+            rs = self.collection.insert(doc)
+            return str(rs)
+
     def __str__(self):
-        return "%s://%s:%s/%s?%s" % ('mongo',
+        return "%s://%s:%s/%s?%s" % (self.config['ENGINE'],
                                      self.config['HOST'],
                                      self.config['PORT'],
                                      self.config['NAME'],
