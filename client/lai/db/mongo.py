@@ -31,24 +31,15 @@ class DBMongo(DBBase):
     def get(self, id):
         rs = self.collection.find_one({'_id': ObjectId(id)})
         if rs:
-            doc = Document()
-            doc.set(rs)
+            doc = Document(**rs)
             doc.id = str(rs['_id'])
             return doc
 
     def save(self, doc):
-        doc_ = {
-            'sid'     : doc.sid,
-            'tid'     : doc.tid,
-            'data'    : doc.data,
-            'keys'    : doc.keys,
-            'users'   : doc.users,
-            'usersdel': doc.usersdel,
-            'synched' : False,
-        }
+        doc_ = doc.to_dict()
+        doc_['synched'] = False
         if doc.id:
-            doc_['id'] = doc.id
-            return self.update(doc_, synched=False)
+            return self.update(doc_, synched=False, pk='_id')
         else:
             rs = self.collection.insert(doc_)
             return str(rs)

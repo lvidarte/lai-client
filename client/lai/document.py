@@ -4,23 +4,26 @@ from lai import config
 
 
 class Document:
+    
+    VALID_ATTRS = ('data', 'keys', 'id', 'sid', 'tid', 'users', 'usersdel')
 
-    users = []
-    usersdel = []
-
-    def __init__(self, data=None, id=None, sid=None, tid=None,
-                 keys=None, users=None, usersdel=None):
-        self.data = data
-        self.keys = keys
-        self.id  = id
-        self.sid = sid
-        self.tid = tid
-        if users is None and usersdel is None:
+    def __init__(self, data=None, keys=None, id=None, sid=None, tid=None,
+                 users=[], usersdel=[], **kwargs):
+        self.from_dict(locals())
+        if not users:
             self.add_user(config.USER)
 
-    def set(self, data_dict):
-        for key, value in data_dict.items():
-            setattr(self, key, value)
+    def from_dict(self, mapping):
+        for key, value in mapping.items():
+            if key in self.VALID_ATTRS:
+                setattr(self, key, value)
+
+    def to_dict(self):
+        doc = {}
+        for key, value in self.__dict__.items():
+            if key in self.VALID_ATTRS:
+                doc[key] = value
+        return doc
 
     def add_user(self, user):
         if user not in self.users:
@@ -34,8 +37,8 @@ class Document:
         if user in self.users:
             del self.users[self.users.index(user)]
 
-    def __str__(self):
-        return self.data
+    def __repr__(self):
+        return str(self.__dict__)
 
 
 if __name__ == '__main__':
