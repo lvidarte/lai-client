@@ -42,10 +42,13 @@ class TestDBSqlite(unittest.TestCase):
         self.assertEqual(self.db.docs_count(), 1)
 
     def test_get_doc_by_id(self):
-        new_doc = Document(sid=1, tid=2, data='sarlanga')
+        new_doc = Document(sid=1, tid=2, data='sarlanga', users=['alfredo', 'maria'])
         self.db.save(new_doc)
         doc = self.db.get(1)
         self.assertEqual(doc.data, 'sarlanga')
+        self.assertEqual(doc.sid, '1')
+        self.assertEqual(doc.tid, '2')
+        self.assertEqual(doc.users, [u'alfredo', u'maria'])
 
     def test_update(self):
         new_doc = Document(data='1 2 3')
@@ -53,7 +56,58 @@ class TestDBSqlite(unittest.TestCase):
         edit_doc = self.db.get(1)
         edit_doc.data = '1 2 3 4'
         self.db.save(edit_doc)
-        
+
         doc = self.db.get(1)
         self.assertEqual(doc.data, '1 2 3 4')
 
+    def test_get_last_tid(self):
+        self.assertEqual(self.db.get_last_tid(),0)
+    
+    def test_exist(self):
+        self.db.save(Document('git log --graph --oneline --all #fancy git log'))
+        self.assertTrue(self.db._exists('id', 1))
+        self.assertFalse(self.db._exists('id', 0))
+        self.assertFalse(self.db._exists('id', None))
+
+    def test_exist_with_sid(self):
+        self.db.save(Document('git log --graph --oneline --all #fancy git log', sid=33))
+        self.assertTrue(self.db._exists('sid', 33))
+        self.assertFalse(self.db._exists('sid', 0))
+        self.assertFalse(self.db._exists('sid', None))
+
+    def test_search(self):
+        '''guardo algunos documentos luego los busco por
+           diferentes criterios'''
+
+        self.db.save(Document('ls -l --color'))
+        self.db.save(Document('git log --graph --oneline --all #fancy git log'))
+        self.db.save(Document('can(){ shift 2; sudo "$@"; } #sudo like a sir'))
+        self.db.save(Document('git fetcho upstream/aster'))
+
+        res = self.db.search('ls')
+        self.assertEqual(len(res), 1)
+
+        res = self.db.search('git')
+        self.assertEqual(len(res), 2)
+
+        res = self.db.search('o')
+        self.assertEqual(len(res), 4)
+
+        res = self.db.search('Z')
+        self.assertEqual(len(res), 0)
+
+        res = self.db.search(None)
+        self.assertEqual(len(res), 0)
+
+        res = self.db.search('')
+        self.assertEqual(len(res), 0)
+
+    def test_get_docs_for_commit(self):
+
+        self.db.save(Document('ls -l --color'))
+        self.db.save(Document('git log --graph --oneline --all #fancy git log'))
+        self.db.save(Document('can(){ shift 2; sudo "$@"; } #sudo like a sir'))
+        self.db.save(Document('git fetcho upstream/aster'), synched=True)
+
+        docs = self.db.get_docs_for_commit()
+        self.assertEqual(len(docs), 3)
