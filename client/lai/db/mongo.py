@@ -26,7 +26,12 @@ class DBMongo(DBBase):
             return 0
 
     def search(self, regex):
-        return list(self.collection.find({'data': {'$regex': regex}}))
+        cur = self.collection.find({'data': {'$regex': regex}})
+        docs = []
+        for row in cur:
+            row['id'] = str(row['_id'])
+            docs.append(Document(**row))
+        return docs
 
     def get(self, id):
         rs = self.collection.find_one({'_id': ObjectId(id)})
