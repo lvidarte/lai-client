@@ -55,12 +55,13 @@ class DBSqlite(DBBase):
             return self._update(doc, synched)
 
     def update(self, doc, synched=False, pk='id'):
+        doc = Document(**doc)
 
         if pk == 'id':
             self.save(doc, synched)
         elif pk == 'sid':
             id = self._exists('sid', doc.sid)
-            doc['id'] = id
+            doc.id = id
             self.save(doc, synched)
 
     def get(self, id):
@@ -93,13 +94,13 @@ class DBSqlite(DBBase):
 
         docs = []
         self.cursor.execute('''SELECT * FROM %s
-                               WHERE synched = 'False' ''' % (self.config['TABLE']))
+                               WHERE synched = 0 ''' % (self.config['TABLE']))
         rows = self.cursor.fetchall()
         for row in rows:
             doc = Document(**row)
             doc.users    = row[5].split(',')
             doc.usersdel = row[6].split(',')
-            docs.append(doc)
+            docs.append(doc.to_dict())
         return docs
 
     def get_last_tid(self):
@@ -110,7 +111,7 @@ class DBSqlite(DBBase):
                                LIMIT 1''' % (self.config['TABLE']))
 
         row = self.cursor.fetchone()
-        if row is not None:
+        if row:
             return row[0]
         else:
             return 0
@@ -119,9 +120,9 @@ class DBSqlite(DBBase):
 
         sql_insert = '''INSERT INTO %s
            (tid, sid, data, keys, users, usersdel, synched)
-           VALUES ('%s','%s','%s','%s', '%s', '%s', '%s')
-        '''
-        rows_afected = self.cursor.execute(sql_insert % (self.config['TABLE'],
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''' % self.config['TABLE']
+        rows_afected = self.cursor.execute(sql_insert, (
                                           doc.tid,
                                           doc.sid,
                                           doc.data,
@@ -160,8 +161,11 @@ class DBSqlite(DBBase):
 
         if value:
             self.cursor.execute('''SELECT id FROM %s
-                                   WHERE %s = %s''' % (self.config['TABLE'], key, value))
-            return self.cursor.fetchone()[0]
+                                   WHERE %s = ?''' % (self.config['TABLE'], key),
+                                   (value,))
+            row = self.cursor.fetchone()
+            if row:
+                return row['id']
         else:
             return False
 
