@@ -4,11 +4,12 @@ from lai import config
 
 
 class Document:
-    
-    VALID_ATTRS = ('data', 'keys', 'id', 'sid', 'tid', 'users', 'usersdel')
+
+    VALID_ATTRS = ('data', 'keys', 'id', 'sid', 'tid',
+                   'users', 'usersdel', 'synched')
 
     def __init__(self, data=None, keys=None, id=None, sid=None, tid=None,
-                 users=[], usersdel=[], **kwargs):
+                 users=[], usersdel=[], synched=False):
         self.from_dict(locals())
         if not users:
             self.add_user(config.USER)

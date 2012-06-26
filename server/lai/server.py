@@ -44,9 +44,9 @@ class MainHandler(tornado.web.RequestHandler):
             _doc = {'sid'     : str(doc['_id']),
                     'tid'     : doc['tid'],
                     'data'    : doc['data'],
+                    'keys'    : doc['keys'],
                     'users'   : doc['users'],
-                    'usersdel': doc['usersdel'],
-                    'keys'    : doc['keys']}
+                    'usersdel': doc['usersdel']}
             docs.append(_doc)
         return docs
 

@@ -2,6 +2,7 @@
 
 import pymongo
 from lai.db.base import DBBase
+from lai.database import UPDATE_RESPONSE, COMMIT_RESPONSE
 from lai import Document
 
 try:
@@ -22,44 +23,77 @@ class DBMongo(DBBase):
         doc = self.collection.find_one({'tid': {'$gt': 0}}, sort=[('tid', -1)])
         if doc:
             return doc['tid']
-        else:
-            return 0
+        return 0
 
     def search(self, regex):
         cur = self.collection.find({'data': {'$regex': regex}})
         docs = []
         for row in cur:
             row['id'] = str(row['_id'])
+            del row['_id']
             docs.append(Document(**row))
         return docs
 
     def get(self, id):
         rs = self.collection.find_one({'_id': ObjectId(id)})
         if rs:
+            rs['id'] = str(rs['_id'])
+            del rs['_id']
             doc = Document(**rs)
-            doc.id = str(rs['_id'])
             return doc
 
     def save(self, doc):
-        doc_ = doc.to_dict()
-        doc_['synched'] = False
         if doc.id:
-            return self.update(doc_, synched=False, pk='_id')
+            return self.update(doc)
         else:
-            rs = self.collection.insert(doc_)
-            return str(rs)
+            return self.insert(doc)
 
-    def update(self, doc, synched, pk='_id'):
-        if pk == '_id':
-            id = ObjectId(doc['id'])
-            del doc['id']
+    def insert(self, doc):
+        doc_ = {'sid'     : doc.sid,
+                'tid'     : doc.tid,
+                'data'    : doc.data,
+                'keys'    : doc.keys,
+                'users'   : doc.users,
+                'usersdel': doc.usersdel,
+                'synched' : False}
+        rs = self.collection.insert(doc_)
+        return str(rs)
+
+    def update(self, doc, type=None):
+        if type is None:
+            pk = '_id'
+            id = ObjectId(doc.id)
             upsert = False
-        elif pk == 'sid':
-            id = doc['sid']
+            doc_ = {'sid'     : doc.sid,
+                    'tid'     : doc.tid,
+                    'data'    : doc.data,
+                    'keys'    : doc.keys,
+                    'users'   : doc.users,
+                    'usersdel': doc.usersdel,
+                    'synched' : False}
+        elif type == UPDATE_RESPONSE:
+            pk = 'sid'
+            id = doc.id
             upsert = True
-        doc['synched'] = synched
+            doc_ = {'sid'     : doc.sid,
+                    'tid'     : doc.tid,
+                    'data'    : doc.data,
+                    'keys'    : doc.keys,
+                    'users'   : doc.users,
+                    'usersdel': doc.usersdel,
+                    'synched' : True}
+        elif type == COMMIT_RESPONSE:
+            pk = '_id'
+            id = ObjectId(doc.id)
+            upsert = False
+            doc_ = {'sid'     : doc.sid,
+                    'tid'     : doc.tid,
+                    'synched' : True}
+        else:
+            return False
+
         rs = self.collection.update({pk: id},
-                                    {'$set': doc},
+                                    {'$set': doc_},
                                     safe=True,
                                     upsert=upsert)
         return rs['n'] == 1
@@ -67,12 +101,12 @@ class DBMongo(DBBase):
     def get_docs_for_commit(self):
         rs = self.collection.find({'synched': False})
         docs = []
-        for doc in rs:
-            doc['id'] = str(doc['_id'])
-            del doc['_id']
-            docs.append(doc)
+        for row in rs:
+            row['id'] = str(row['_id'])
+            del row['_id']
+            del row['synched']
+            docs.append(row)
         return docs
-
 
     def __str__(self):
         return "%s://%s:%s/%s?%s" % (self.config['ENGINE'],
