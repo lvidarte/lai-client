@@ -57,12 +57,13 @@ class DBSqlite(DBBase):
     def update(self, doc, synched=False, pk='id'):
         doc = Document(**doc)
 
-        if pk == 'id':
-            self.save(doc, synched)
+        if pk == 'id' and synched:
+            self._update_transaction(doc, synched)
         elif pk == 'sid':
             id = self._exists('sid', doc.sid)
             doc.id = id
             self.save(doc, synched)
+
 
     def get(self, id):
 
@@ -107,6 +108,7 @@ class DBSqlite(DBBase):
 
         self.cursor.execute('''SELECT tid
                                FROM %s
+                               WHERE tid is not NULL
                                ORDER BY tid DESC
                                LIMIT 1''' % (self.config['TABLE']))
 
@@ -136,24 +138,38 @@ class DBSqlite(DBBase):
     def _update(self, doc, synched=False):
 
         sql_update = '''UPDATE %s
-                        SET sid      = '%s',
-                            tid      = '%s',
-                            data     = '%s',
-                            keys     = '%s',
-                            users    = '%s',
-                            usersdel = '%s',
-                            synched  = '%s'
+                        SET sid      = ?,
+                            tid      = ?,
+                            data     = ?,
+                            keys     = ?,
+                            users    = ?,
+                            usersdel = ?,
+                            synched  = ?
                         WHERE id = %d
-                     '''
-        rows_afected = self.cursor.execute(sql_update % (self.config['TABLE'],
-                                                         doc.sid,
-                                                         doc.tid,
-                                                         doc.data,
-                                                         doc.keys,
-                                                         ','.join(doc.users),
-                                                         ','.join(doc.usersdel),
-                                                         synched,
-                                                         doc.id)).rowcount
+                     ''' % (self.config['TABLE'], doc.id)
+
+        rows_afected = self.cursor.execute(sql_update, (doc.sid,
+                                                       doc.tid,
+                                                       doc.data,
+                                                       doc.keys,
+                                                       ','.join(doc.users),
+                                                       ','.join(doc.usersdel),
+                                                       synched)).rowcount
+        self.connection.commit()
+        return rows_afected
+
+    def _update_transaction(self, doc, synched=False):
+
+        sql_update = '''UPDATE %s
+                        SET sid      = ?,
+                            tid      = ?,
+                            synched  = ?
+                        WHERE id = %d
+                     ''' % (self.config['TABLE'], doc.id)
+
+        rows_afected = self.cursor.execute(sql_update, (doc.sid,
+                                                        doc.tid,
+                                                        synched)).rowcount
         self.connection.commit()
         return rows_afected
 
