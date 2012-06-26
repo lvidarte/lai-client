@@ -14,7 +14,7 @@ class TestDBSqlite(unittest.TestCase):
             pass
 
     def setUp(self):
-        self.config = {'NAME': 'lai.db',
+        self.config = {'NAME': 'lai_test.db',
                        'TABLE': 'client'}
 
         self.db = DBSqlite(self.config)
