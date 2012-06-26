@@ -2,6 +2,7 @@
 
 import sqlite3 as sqlite
 from lai.db.base import DBBase
+from lai.database import UPDATE_RESPONSE, COMMIT_RESPONSE
 from lai import Document
 
 class DBSqlite(DBBase):
@@ -35,7 +36,7 @@ class DBSqlite(DBBase):
             self.cursor.execute('''CREATE TABLE %s
                                    (id INTEGER PRIMARY KEY AUTOINCREMENT,
                                     sid      TEXT,
-                                    tid      TEXT,
+                                    tid      INTEGER DEFAULT 0,
                                     data     TEXT,
                                     keys     TEXT,
                                     users    TEXT,
@@ -54,21 +55,22 @@ class DBSqlite(DBBase):
         else:
             return self._update(doc, synched)
 
-    def update(self, doc, synched=False, pk='id'):
-        doc = Document(**doc)
-
-        if pk == 'id' and synched:
-            self._update_transaction(doc, synched)
-        elif pk == 'sid':
+    #def update(self, doc, synched=False, pk='id'):
+    def update(self, doc, type=None):
+        if type is None or type == UPDATE_RESPONSE:
             id = self._exists('sid', doc.sid)
             doc.id = id
+            synched = True if type == UPDATE_RESPONSE else False
             self.save(doc, synched)
+        elif COMMIT_RESPONSE:
+            self._update_transaction(doc, synched=True)
+
 
 
     def get(self, id):
 
         self.cursor.execute('''SELECT * FROM %s
-                              WHERE id = %d''' % (self.config['TABLE'], id))
+                              WHERE id = %s''' % (self.config['TABLE'], id))
         row = self.cursor.fetchone()
         if row is not None:
             doc = Document(**row)
@@ -108,7 +110,6 @@ class DBSqlite(DBBase):
 
         self.cursor.execute('''SELECT tid
                                FROM %s
-                               WHERE tid is not NULL
                                ORDER BY tid DESC
                                LIMIT 1''' % (self.config['TABLE']))
 

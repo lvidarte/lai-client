@@ -3,6 +3,9 @@
 from lai.config import DATABASE
 
 
+UPDATE_RESPONSE = 1
+COMMIT_RESPONSE = 2
+
 class Database(object):
     """Factory"""
 
