@@ -66,9 +66,9 @@ class MainHandler(tornado.web.RequestHandler):
     def _process(self, doc, tid):
         _doc = {'tid'     : tid,
                 'data'    : doc['data'],
+                'keys'    : doc['keys'],
                 'users'   : doc['users'],
-                'usersdel': doc['usersdel'],
-                'keys'    : doc['keys']}
+                'usersdel': doc['usersdel']}
 
         if doc['sid'] is not None:
             _id  = ObjectId(doc['sid'])
