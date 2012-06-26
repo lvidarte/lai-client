@@ -5,6 +5,8 @@ import urllib2
 import json
 
 from lai import config
+from lai.document import Document
+from lai.database import UPDATE_RESPONSE, COMMIT_RESPONSE
 
 
 class Client:
@@ -15,8 +17,9 @@ class Client:
     def update(self):
         data = self.fetch()
         if len(data['docs']):
-            for doc in data['docs']:
-                self.db.update(doc, synched=True, pk='sid')
+            for doc_ in data['docs']:
+                doc = Document(**doc_)
+                self.db.update(doc, type=UPDATE_RESPONSE)
             return 'ok'
         else:
             return 'nothing to update'
@@ -28,8 +31,9 @@ class Client:
             if 'error' in data:
                 return data['error']
             else:
-                for doc in data['docs']:
-                    self.db.update(doc, synched=True)
+                for doc_ in data['docs']:
+                    doc = Document(**doc_)
+                    self.db.update(doc, type=COMMIT_RESPONSE)
                 return 'ok'
         else:
             return 'nothing to commit'
