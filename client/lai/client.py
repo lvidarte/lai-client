@@ -1,233 +1,74 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sys
 import urllib
 import urllib2
 import json
-import pymongo
-import tempfile
-import codecs
 
-from pprint import pprint
-
-try:
-    from bson.objectid import ObjectId
-except ImportError:
-    from pymongo.objectid import ObjectId
-
-import config
+from lai import config
+from lai.document import Document
+from lai.database import UPDATE_RESPONSE, COMMIT_RESPONSE
 
 
-conn = pymongo.Connection(config.DB_HOST, config.DB_PORT)
-db   = conn[config.DB_NAME]
-coll = db[config.DB_COLLECTION]
+class Client:
 
+    def __init__(self, database):
+        self.db = database
 
-def search(regex):
-    return list(coll.find({'data': {'$regex': regex}}))
-
-
-def get(*args):
-    params = {'_id': ObjectId(args[0])} if len(args) else {}
-    docs = []
-    for doc in coll.find(params):
-        if len(doc['data']) > 40:
-            data = doc['data'].split()
-            doc['data'] = ' '.join(data[:10]) + '..'
-        docs.append(doc)
-    return docs
-
-
-def add(*args):
-    # Search for a doc without data
-    docs = list(coll.find({'data': ''}).limit(1))
-    if len(docs) == 1:
-        _id = docs[0]['_id']
-        coll.update({'_id': _id}, {'$set': {'data': args[0], 'commit': True}})
-    else:
-        doc = {'data': args[0], 'commit': True, 'sid': None, 'tid': None}
-        _id = coll.insert(doc)
-    return _id
-
-
-def put(*args):
-    _id = ObjectId(args[0])
-    data = args[1]
-    rs = coll.update({'_id': _id},
-                     {'$set': {'data': data, 'commit': True}},
-                     safe=True)
-    return rs['n'] == 1
-
-
-def delete(*args):
-    _id = ObjectId(args[0])
-    doc = coll.find_one({'_id': _id})
-    if doc['sid']:
-        rs = coll.update({'_id': _id},
-                         {'$set': {'data': '', 'commit': True}},
-                         safe=True)
-    else:
-        rs = coll.remove({'_id': _id}, safe=True)
-    return rs['n'] == 1
-
-
-def update(*args):
-    tid = args[0] if len(args) else get_last_tid()
-    url = "%s/%s" % (config.SERVER, tid)
-    req = urllib2.urlopen(url)
-    data = json.loads(req.read())
-    if len(data['docs']):
-        for doc in data['docs']:
-            rs = process_update(doc)
-            print "%s %s" % (doc['sid'], rs['n'] == 1)
-        return "%d docs updated" % len(data['docs'])
-    else:
-        return "nothing to update"
-
-
-def process_update(doc):
-    return coll.update({'sid': doc['sid']},
-                       {'$set': {'tid': doc['tid'],
-                                 'commit': False,
-                                 'data': doc['data']}},
-                       safe=True, upsert=True)
-
-
-def commit():
-    url = "%s/%s" % (config.SERVER, get_last_tid())
-
-    docs = []
-    for doc in coll.find({'commit': True}):
-        docs.append(get_doc_for_commit(doc))
-
-    if len(docs):
-        data = urllib.urlencode({'docs': json.dumps(docs)})
-        req = urllib2.Request(url, data)
-        res = urllib2.urlopen(req)
-        data = json.loads(res.read())
-
-        if 'error' in data:
-            return data['error']
+    def update(self):
+        data = self.fetch()
+        if len(data['docs']):
+            for doc_ in data['docs']:
+                doc = Document(**doc_)
+                self.db.update(doc, type=UPDATE_RESPONSE)
+            return 'ok'
         else:
-            for doc in data['docs']:
-                rs = process_commit(doc)
-                print "%s %s" % (doc['cid'], rs['n'] == 1)
-            return "%d docs commited" % len(data['docs'])
-    else:
-        return "nothing to commit"
+            return 'nothing to update'
 
-
-def process_commit(doc):
-    _id = ObjectId(doc['cid'])
-    return coll.update({'_id': _id},
-                       {'$set': {'sid': doc['sid'],
-                                 'tid': doc['tid'],
-                                 'commit': False}},
-                       safe=True)
-
-
-def get_last_tid():
-    try:
-        docs = coll.find({'tid': {'$gt': 0}})
-        docs = docs.sort('tid', -1).limit(1)
-        return int(docs.next()['tid'])
-    except StopIteration:
-        return 0
-
-
-def get_doc_for_commit(doc):
-    _doc = {'cid': str(doc['_id']),
-            'data': doc['data']}
-    if doc.get('sid'):
-        _doc['sid'] = doc['sid']
-        _doc['tid'] = doc['tid']
-    return _doc
-
-
-def editor(*args):
-    if len(args):
-        _id = ObjectId(args[0])
-        doc = coll.find_one({'_id': _id})
-    else:
-        _id = None
-        doc = None
-
-    (_, filename) = tempfile.mkstemp()
-
-    if doc:
-        file = codecs.open(filename, 'w', encoding='utf8')
-        file.write(doc['data'])
-        file.close()
-
-    if os.system(os.getenv('EDITOR') + " " + filename) == 0:
-        data = codecs.open(filename, 'r', encoding='utf8').read()
-        if _id:
-            put(_id, data)
+    def commit(self):
+        docs = self.db.get_docs_for_commit()
+        if len(docs):
+            data = self.fetch(docs)
+            if 'error' in data:
+                return data['error']
+            else:
+                for doc_ in data['docs']:
+                    doc = Document(**doc_)
+                    self.db.update(doc, type=COMMIT_RESPONSE)
+                return 'ok'
         else:
-            add(data)
+            return 'nothing to commit'
 
-    os.unlink(filename)
+    def get(self, id):
+        return self.db.get(id)
 
+    def save(self, document):
+        return self.db.save(document)
 
-def print_result(rs):
-    if type(rs) == list:
-        fmt = "%-24s | %-24s | %-5s | %-5s | %s"
-        print fmt % ('_id', 'sid', 'tid', 'ci', 'data')
-        for doc in rs:
-            print fmt % (doc['_id'], doc['sid'], doc['tid'],
-                         doc['commit'], doc['data'])
-    elif type(rs) == dict:
-        pprint(rs)
-    elif rs is not None:
-        print rs
+    def delete(self):
+        pass
 
+    def search(self, regex):
+        return self.db.search(regex)
 
-def print_help(msg=None):
-    if msg:
-        print msg
-        print
-    print "Usage: lai regex                 Performs a regex search"
-    print "       lai --add 'Text.'         Add new doc"
-    print "       lai --get [ID]            Get all or a specific doc"
-    print "       lai --put ID 'New text'   Update doc"
-    print "       lai --editor [ID]         Add or Update doc with default text editor"
-    print "       lai --del ID              Delete doc"
-    print "       lai --update              Update changes"
-    print "       lai --commit              Commit changes"
+    def fetch(self, docs=None):
+        url = self.get_request_url()
+        if docs is not None:
+            data = urllib.urlencode({'docs': json.dumps(docs)})
+            req = urllib2.Request(url, data)
+        else:
+            req = url
+        res= urllib2.urlopen(req)
+        return json.loads(res.read())
 
-
-METHODS = {
-    '--get'    : get,
-    '--add'    : add,
-    '--put'    : put,
-    '--del'    : delete,
-    '--delete' : delete,
-    '--commit' : commit,
-    '--ci'     : commit,
-    '--update' : update,
-    '--up'     : update,
-    '--help'   : print_help,
-    '--editor' : editor,
-}
+    def get_request_url(self):
+        tid = self.db.get_last_tid()
+        return "%s/%s/%s" % (config.SERVER, config.USER, tid)
 
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        rs = None
-        if sys.argv[1].startswith('--'):
-            try:
-                fn = METHODS[sys.argv[1]]
-            except KeyError:
-                print_help("Method not implemented.")
-            else:
-                if len(sys.argv) > 2:
-                    rs = fn(*sys.argv[2:])
-                else:
-                    rs = fn()
-        else:
-            rs = search(sys.argv[1])
-        print_result(rs)
-    else:
-        print_help()
-
+    from lai import Database
+    database = Database()
+    client = Client(database)
+    docs = client.search('')
+    for doc in docs:
+        print doc
