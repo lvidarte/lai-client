@@ -98,6 +98,12 @@ class DBMongo(DBBase):
                                     upsert=upsert)
         return rs['n'] == 1
 
+    def delete(self, doc):
+        id = ObjectId(doc.id)
+        doc_ = {'data': None, 'keys': None}
+        rs = self.collection.update({'_id': id}, {'$set': doc_}, safe=True)
+        return rs['n'] == 1
+
     def get_docs_for_commit(self):
         rs = self.collection.find({'synched': False})
         docs = []

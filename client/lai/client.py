@@ -45,7 +45,7 @@ class Client:
         return self.db.save(document)
 
     def delete(self):
-        pass
+        return self.db.delete(document)
 
     def search(self, regex):
         return self.db.search(regex)

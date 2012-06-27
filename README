@@ -8,7 +8,4 @@ Requirements/Use:
 
 2. CLIENT
  * mockito
- * Mongo:
-   - pymongo
- * Sqlite:
-   - pysqlite2
+ * pymongo
