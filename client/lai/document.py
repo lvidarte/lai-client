@@ -33,10 +33,10 @@ class Document:
             del self.usersdel[self.usersdel.index(user)]
 
     def del_user(self, user):
-        if user not in self.usersdel:
-            self.usersdel.append(user)
         if user in self.users:
             del self.users[self.users.index(user)]
+            if user not in self.usersdel:
+                self.usersdel.append(user)
 
     def __repr__(self):
         return str(self.__dict__)

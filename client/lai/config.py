@@ -2,18 +2,19 @@ SERVER = "http://localhost:8888"
 
 USER = "xleo"
 
-DATABASE = {
+DATABASE1 = {
     'ENGINE': 'mongo',
     'HOST'  : 'localhost',
     'PORT'  : 27017,
     'NAME'  : 'lai',
-    'TABLE' : 'client1',
+    'TABLE' : '%s_%s' % (USER, 'client1'),
 }
 
-#DATABASE = {
-    #'ENGINE': 'sqlite',
-    #'NAME'  : 'lai.db',
-    #'TABLE' : 'client',
-    #'REGEXP_EXTENSION_PATH' : "/usr/lib/sqlite3/pcre.so",
-#}
+DATABASE2 = {
+    'ENGINE': 'sqlite',
+    'NAME'  : 'lai.db',
+    'TABLE' : '%s_%s' % (USER, 'client1'),
+}
+
+DATABASE = DATABASE1
 

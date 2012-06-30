@@ -47,6 +47,12 @@ def delete(*args):
     else:
         return client.delete(doc)
 
+def search(q):
+    rs = client.search(q)
+    if rs:
+        return rs
+    return None
+
 def update(*args):
     return client.update()
 
@@ -82,13 +88,34 @@ def editor(*args):
 def status(*args):
     return "Not implemented yet"
 
+def adduser(*args):
+    return _change_user('add', args)
+
+def deluser(*args):
+    return _change_user('del', args)
+
+def _change_user(type, args):
+    try:
+        id = args[0]
+        user = args[1]
+    except IndexError:
+        return get_short_help("Arguments ID and USER required")
+    else:
+        doc = client.get(id)
+        if type == 'add':
+            doc.add_user(user)
+        elif type == 'del':
+            doc.del_user(user)
+        client.save(doc)
+
 def to_stdout(obj):
     if type(obj) == list:
-        fmt = "%-24s | %-24s | %-5s | %-5s | %s"
-        print fmt % ('id', 'sid', 'tid', 'data', 'keys')
+        fmt = "%-4s | %-24s | %-4s | %-14s | %s\n%s"
+        print fmt % ('id', 'sid', 'tid', 'users', 'keys', '-'*80)
         for doc in obj:
             print fmt % (doc.id, doc.sid, doc.tid,
-                         doc.data, doc.keys)
+                         ','.join(doc.users), doc.keys,
+                         "%s\n%s" % (doc.data, '-'*80))
     elif type(obj) == dict:
         pprint(obj)
     elif obj is not None:
@@ -136,6 +163,8 @@ if __name__ == '__main__':
         '--update' : update,
         '--editor' : editor,
         '--status' : status,
+        '--adduser': adduser,
+        '--deluser': deluser,
         '--help'   : lambda: to_stdout(get_long_help()),
     }
 
@@ -152,7 +181,7 @@ if __name__ == '__main__':
                 else:
                     rs = fn()
         else:
-            rs = client.search(sys.argv[1])
+            rs = search(sys.argv[1])
         to_stdout(rs)
     else:
         to_stdout(get_long_help())
