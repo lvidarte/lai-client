@@ -127,7 +127,9 @@ def get_short_help(msg=None):
         out = msg + '\n\n'
     out += "Usage: lai regex\n"
     out += "       lai [--update | --commit | --status]\n"
-    out += "       lai [--add TEXT | --get ID | --change ID NEW_TEXT | --editor [ID] | --del ID]"
+    out += "       lai [--add TEXT | --change ID NEW_TEXT | --editor [ID]]\n"
+    out += "       lai [--get ID | --del ID]\n"
+    out += "       lai [--adduser ID USER | --deluser ID USER]"
     return out
 
 def get_long_help(msg=None):
@@ -136,13 +138,15 @@ def get_long_help(msg=None):
         out = msg + '\n\n'
     out += "Usage: lai regex                 Performs a regex search\n"
     out += "       lai --add TEXT            Add new doc\n"
-    out += "       lai --get                 Get a specific doc\n"
     out += "       lai --change ID NEW_TEXT  Update doc\n"
     out += "       lai --editor [ID]         Add or Update doc with default text editor\n"
+    out += "       lai --get ID              Get a specific doc\n"
     out += "       lai --del ID              Delete doc\n"
     out += "       lai --update              Update changes\n"
     out += "       lai --commit              Commit changes\n"
-    out += "       lai --status              Show actual status"
+    out += "       lai --status              Show actual status\n"
+    out += "       lai --adduser ID USER     Add user to doc\n"
+    out += "       lai --deluser ID USER     Del user from doc"
     return out
 
     out = ""
