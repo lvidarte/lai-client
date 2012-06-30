@@ -24,7 +24,9 @@ def get(*args):
     except IndexError:
         return get_short_help("Argument ID required")
     else:
-        return [client.get(id)]
+        doc = client.get(id)
+        if doc:
+            return [doc]
 
 def change(*args):
     try:
@@ -46,16 +48,10 @@ def delete(*args):
         return client.delete(doc)
 
 def update(*args):
-    if len(args):
-        return get_short_help("--update takes no arguments")
-    else:
-        return client.update()
+    return client.update()
 
 def commit(*args):
-    if len(args):
-        return get_short_help("--commit takes no arguments")
-    else:
-        return client.commit()
+    return client.commit()
 
 def editor(*args):
     editor_cmd = os.getenv('EDITOR')
@@ -83,6 +79,9 @@ def editor(*args):
     os.unlink(filename)
     return rs
 
+def status(*args):
+    return "Not implemented yet"
+
 def to_stdout(obj):
     if type(obj) == list:
         fmt = "%-24s | %-24s | %-5s | %-5s | %s"
@@ -100,7 +99,7 @@ def get_short_help(msg=None):
     if msg:
         out = msg + '\n\n'
     out += "Usage: lai regex\n"
-    out += "       lai [--update | --commit]\n"
+    out += "       lai [--update | --commit | --status]\n"
     out += "       lai [--add TEXT | --get ID | --change ID NEW_TEXT | --editor [ID] | --del ID]"
     return out
 
@@ -115,7 +114,8 @@ def get_long_help(msg=None):
     out += "       lai --editor [ID]         Add or Update doc with default text editor\n"
     out += "       lai --del ID              Delete doc\n"
     out += "       lai --update              Update changes\n"
-    out += "       lai --commit              Commit changes"
+    out += "       lai --commit              Commit changes\n"
+    out += "       lai --status              Show actual status"
     return out
 
     out = ""
@@ -135,6 +135,7 @@ if __name__ == '__main__':
         '--commit' : commit,
         '--update' : update,
         '--editor' : editor,
+        '--status' : status,
         '--help'   : lambda: to_stdout(get_long_help()),
     }
 
