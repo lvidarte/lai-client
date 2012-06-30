@@ -42,10 +42,12 @@ class Client:
         return self.db.get(id)
 
     def save(self, document):
+        if document.keys is None:
+            document.set_keys()
         return self.db.save(document)
 
-    def delete(self):
-        return self.db.delete(document)
+    def delete(self, id):
+        return self.db.delete(id)
 
     def search(self, regex):
         return self.db.search(regex)

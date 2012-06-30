@@ -16,6 +16,8 @@ def add(*args):
         return get_short_help("Argument TEXT required")
     else:
         doc = Document(data)
+        if len(args) == 2:
+            doc.set_keys(args[1])
         return client.save(doc)
 
 def get(*args):
@@ -61,6 +63,7 @@ def commit(*args):
 
 def editor(*args):
     editor_cmd = os.getenv('EDITOR')
+    keys_line = '------------- enter keywords before this line -------------'
 
     if editor_cmd is None:
         return to_stdout("Environment var EDITOR is unset")
@@ -72,15 +75,25 @@ def editor(*args):
 
     (_, filename) = tempfile.mkstemp()
 
-    if doc.id:
-        file = codecs.open(filename, 'w', encoding='utf8')
-        file.write(doc.data)
-        file.close()
+    with codecs.open(filename, 'w', encoding='utf8') as file:
+        data = doc.data or ''
+        keys = doc.keys or ''
+        file.write("%s\n%s\n%s" % (data, keys_line, keys))
 
     rs = None
     if os.system(editor_cmd + " " + filename) == 0:
-        doc.data = codecs.open(filename, 'r', encoding='utf8').read()
-        rs = client.save(doc)
+        with codecs.open(filename, 'r', encoding='utf8') as file:
+            lines = file.read().splitlines()
+            end_data = None
+            if keys_line in lines:
+                end_data = lines.index(keys_line)
+                if len(lines) > end_data + 1:
+                    doc.set_keys('\n'.join(lines[end_data + 1:]))
+            if end_data is not None:
+                lines = lines[:end_data]
+            data = '\n'.join(lines).strip()
+            if data:
+                rs = client.save(doc)
 
     os.unlink(filename)
     return rs
