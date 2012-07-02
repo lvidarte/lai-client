@@ -91,7 +91,7 @@ class DBSqlite(DBBase):
         docs = []
         if (search_text is not None) and (not search_text == ''):
             self.cursor.execute('''SELECT * FROM %s
-                                   WHERE data LIKE '%s' ''' % (self.config['TABLE'],
+                                   WHERE keys LIKE '%s' ''' % (self.config['TABLE'],
                                                                '%' + search_text + '%'))
             rows = self.cursor.fetchall()
             for row in rows:
