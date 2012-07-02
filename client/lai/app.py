@@ -30,7 +30,7 @@ def get(*args):
         if doc:
             return [doc]
 
-def change(*args):
+def edit(*args):
     try:
         id = args[0]
         data = args[1]
@@ -91,8 +91,8 @@ def editor(*args):
                     doc.set_keys('\n'.join(lines[end_data + 1:]))
             if end_data is not None:
                 lines = lines[:end_data]
-            data = '\n'.join(lines).strip()
-            if data:
+            doc.data = '\n'.join(lines).strip()
+            if doc.data:
                 rs = client.save(doc)
 
     os.unlink(filename)
@@ -102,24 +102,24 @@ def status(*args):
     return "Not implemented yet"
 
 def adduser(*args):
-    return _change_user('add', args)
-
-def deluser(*args):
-    return _change_user('del', args)
-
-def _change_user(type, args):
     try:
-        id = args[0]
-        user = args[1]
+        return _set_user('add', *args)
     except IndexError:
         return get_short_help("Arguments ID and USER required")
-    else:
-        doc = client.get(id)
-        if type == 'add':
-            doc.add_user(user)
-        elif type == 'del':
-            doc.del_user(user)
-        client.save(doc)
+
+def deluser(*args):
+    try:
+        return _set_user('del', *args)
+    except IndexError:
+        return get_short_help("Arguments ID and USER required")
+
+def _set_user(action, id, user):
+    doc = client.get(id)
+    if action == 'add':
+        doc.add_user(user)
+    elif action == 'del':
+        doc.del_user(user)
+    client.save(doc)
 
 def to_stdout(obj):
     if type(obj) == list:
@@ -138,9 +138,9 @@ def get_short_help(msg=None):
     out = ''
     if msg:
         out = msg + '\n\n'
-    out += "Usage: lai regex\n"
+    out += "Usage: lai WORD\n"
     out += "       lai [--update | --commit | --status]\n"
-    out += "       lai [--add TEXT | --change ID NEW_TEXT | --editor [ID]]\n"
+    out += "       lai [--add TEXT | --edit ID NEW_TEXT | --editor [ID]]\n"
     out += "       lai [--get ID | --del ID]\n"
     out += "       lai [--adduser ID USER | --deluser ID USER]"
     return out
@@ -149,10 +149,10 @@ def get_long_help(msg=None):
     out = ''
     if msg:
         out = msg + '\n\n'
-    out += "Usage: lai regex                 Performs a regex search\n"
+    out += "Usage: lai WORD                  Performs a search\n"
     out += "       lai --add TEXT            Add new doc\n"
-    out += "       lai --change ID NEW_TEXT  Update doc\n"
-    out += "       lai --editor [ID]         Add or Update doc with default text editor\n"
+    out += "       lai --edit ID NEW_TEXT    Edit doc\n"
+    out += "       lai --editor [ID]         Add or edit with default text editor\n"
     out += "       lai --get ID              Get a specific doc\n"
     out += "       lai --del ID              Delete doc\n"
     out += "       lai --update              Update changes\n"
@@ -174,7 +174,7 @@ if __name__ == '__main__':
     METHODS = {
         '--get'    : get,
         '--add'    : add,
-        '--change' : change,
+        '--edit'   : edit,
         '--del'    : delete,
         '--commit' : commit,
         '--update' : update,

@@ -28,7 +28,7 @@ class DBMongo(DBBase):
         return row['last_id']
 
     def search(self, regex):
-        spec = {'data': {'$regex': regex}}
+        spec = {'keys': {'$regex': regex}}
         fields = {'_id': 0}
         cur = self.collection.find(spec, fields)
         docs = []

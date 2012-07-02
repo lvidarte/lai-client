@@ -15,7 +15,10 @@ class Client:
         self.db = database
 
     def update(self):
-        data = self.fetch()
+        try:
+            data = self.fetch()
+        except urllib2.URLError:
+            return 'http connection error'
         if len(data['docs']):
             for doc_ in data['docs']:
                 doc = Document(**doc_)
@@ -27,7 +30,10 @@ class Client:
     def commit(self):
         docs = self.db.get_docs_for_commit()
         if len(docs):
-            data = self.fetch(docs)
+            try:
+                data = self.fetch(docs)
+            except urllib2.URLError:
+                return 'http connection error'
             if 'error' in data:
                 return data['error']
             else:
@@ -59,7 +65,7 @@ class Client:
             req = urllib2.Request(url, data)
         else:
             req = url
-        res= urllib2.urlopen(req)
+        res = urllib2.urlopen(req)
         return json.loads(res.read())
 
     def get_request_url(self):
@@ -68,9 +74,9 @@ class Client:
 
 
 if __name__ == '__main__':
-    from lai import Database
+    from lai.database import Database
     database = Database()
     client = Client(database)
-    docs = client.search('')
+    docs = client.search('awk')
     for doc in docs:
         print doc
