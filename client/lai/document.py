@@ -12,7 +12,7 @@ class Document:
     def __init__(self, data=None, keys=None, id=None, sid=None,
                  tid=None, users=[], usersdel=[], synched=False):
         self.from_dict(locals())
-        if not users:
+        if users == [] and usersdel == []:
             self.add_user(config.USER)
 
     def from_dict(self, mapping):
@@ -30,14 +30,19 @@ class Document:
     def add_user(self, user):
         if user not in self.users:
             self.users.append(user)
-        if user in self.usersdel:
-            del self.usersdel[self.usersdel.index(user)]
+            if user in self.usersdel:
+                del self.usersdel[self.usersdel.index(user)]
+            return True
+        return False
 
     def del_user(self, user):
-        if user in self.users:
+        if user in self.users and len(self.users) > 1 and \
+           (self.sid is not None or user != config.USER):
             del self.users[self.users.index(user)]
             if self.sid is not None and user not in self.usersdel:
                 self.usersdel.append(user)
+            return True
+        return False
 
     def set_keys(self, data=None):
         if data is None:

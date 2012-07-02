@@ -119,10 +119,12 @@ def deluser(*args):
 def _set_user(action, id, user):
     doc = client.get(id)
     if action == 'add':
-        doc.add_user(user)
+        rs = doc.add_user(user)
     elif action == 'del':
-        doc.del_user(user)
-    client.save(doc)
+        rs = doc.del_user(user)
+    if rs == True:
+        return client.save(doc)
+    return False
 
 def to_stdout(obj):
     if type(obj) == list:
