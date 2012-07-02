@@ -60,7 +60,7 @@ class Document:
                 chars.append(' ')
             else:
                 chars.append(char)
-        return ''.join(chars).split()
+        return ''.join(chars).lower().split()
 
     def _is_valid(self, word):
         if len(word) < 2:
