@@ -83,9 +83,11 @@ class MainHandler(tornado.web.RequestHandler):
         else:
             _id  = self.coll.insert(_doc)
 
-        _doc = {'id' : doc['id'],
-                'sid': str(_id),
-                'tid': tid}
+        _doc = {'id'      : doc['id'],
+                'sid'     : str(_id),
+                'tid'     : tid,
+                'users'   : doc['users'],
+                'usersdel': doc['usersdel']}
         return _doc
 
 
