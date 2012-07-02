@@ -107,13 +107,13 @@ def status(*args):
 def adduser(*args):
     try:
         return _set_user('add', *args)
-    except IndexError:
+    except (IndexError, TypeError):
         return get_short_help("Arguments ID and USER required")
 
 def deluser(*args):
     try:
         return _set_user('del', *args)
-    except IndexError:
+    except (IndexError, TypeError):
         return get_short_help("Arguments ID and USER required")
 
 def _set_user(action, id, user):
