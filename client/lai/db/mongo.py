@@ -109,6 +109,9 @@ class DBMongo(DBBase):
             doc_ = {'sid'     : doc.sid,
                     'tid'     : doc.tid,
                     'synched' : True}
+            if config.USER in doc.usersdel:
+                doc_['data'] = None
+                doc_['keys'] = None
         else:
             return False
 
