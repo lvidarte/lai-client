@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pymongo
+from lai import config
 from lai.db.base import DBBase
 from lai.database import UPDATE_RESPONSE, COMMIT_RESPONSE
 from lai import Document
@@ -90,6 +91,9 @@ class DBMongo(DBBase):
         elif type == UPDATE_RESPONSE:
             if self.collection.find({'sid': doc.sid}).count() == 0:
                 return self.insert(doc, synched=True)
+            if config.USER in doc.usersdel:
+                doc.data = None
+                doc.keys = None
             pk = 'sid'
             id = doc.sid
             doc_ = {'sid'     : doc.sid,
@@ -112,10 +116,9 @@ class DBMongo(DBBase):
         return rs['n'] == 1
 
     def delete(self, doc):
-        spec = {'id': doc.id}
-        document = {'$set': {'data': None, 'keys': None, 'synched': False}}
-        rs = self.collection.update(spec, document, safe=True)
-        return rs['n'] == 1
+        doc.data = None
+        doc.keys = None
+        return self.update(doc)
 
     def get_docs_for_commit(self):
         spec = {'synched': False}

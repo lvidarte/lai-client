@@ -47,13 +47,13 @@ class Client:
     def get(self, id):
         return self.db.get(id)
 
-    def save(self, document):
-        if document.keys is None:
-            document.set_keys()
-        return self.db.save(document)
+    def save(self, doc):
+        if doc.keys is None:
+            doc.set_keys()
+        return self.db.save(doc)
 
-    def delete(self, id):
-        return self.db.delete(id)
+    def delete(self, doc):
+        return self.db.delete(doc)
 
     def search(self, regex):
         return self.db.search(regex)
