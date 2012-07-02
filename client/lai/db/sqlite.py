@@ -77,6 +77,14 @@ class DBSqlite(DBBase):
             doc.users    = row[5].split(',')
             doc.usersdel = row[6].split(',')
         return doc
+    
+    def delete(self, doc):
+
+        rc = self.connection.execute('''UPDATE %s 
+                                          SET data=NULL, keys=NULL, synched=0 
+                                          WHERE id = %s''' % (self.config['TABLE'], doc.id)).rowcount
+        self.connection.commit()
+        return rc
 
     def search(self, search_text):
 
