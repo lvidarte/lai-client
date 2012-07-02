@@ -54,7 +54,7 @@ class MainHandler(tornado.web.RequestHandler):
         tid = int(tid)
         docs = json.loads(self.get_argument('docs'))
         if len(self._get_update_docs(user, tid)) == 0:
-            tid += 1
+            tid = self._get_next_tid()
             _docs = []
             for doc in docs:
                 _doc = self._process(doc, tid)
@@ -62,6 +62,13 @@ class MainHandler(tornado.web.RequestHandler):
             self.write(json.dumps({'docs': _docs}))
         else:
             self.write(json.dumps({'error': 'you must update first'}))
+
+    def _get_next_tid(self):
+        query = {'_id': options.db_collection}
+        update = {'$inc': {'last_tid': 1}}
+        collection = self.application.db['counter']
+        row = collection.find_and_modify(query, update, upsert=True, new=True)
+        return row['last_tid']
 
     def _process(self, doc, tid):
         _doc = {'tid'     : tid,
