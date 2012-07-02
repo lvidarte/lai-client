@@ -36,7 +36,7 @@ class Document:
     def del_user(self, user):
         if user in self.users:
             del self.users[self.users.index(user)]
-            if user not in self.usersdel:
+            if self.sid is not None and user not in self.usersdel:
                 self.usersdel.append(user)
 
     def set_keys(self, data=None):
