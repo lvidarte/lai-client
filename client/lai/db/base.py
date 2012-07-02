@@ -25,5 +25,8 @@ class DBBase(object):
     def search(self, regex):
         raise NotImplementedError('search not implemented')
 
+    def status(self):
+        raise NotImplementedError('status not implemented')
+
     def __str__(self):
         raise NotImplementedError('__str__ not implemented')

@@ -58,6 +58,9 @@ class Client:
     def search(self, regex):
         return self.db.search(regex)
 
+    def status(self):
+        return self.db.status()
+
     def fetch(self, docs=None):
         url = self.get_request_url()
         if docs is not None:

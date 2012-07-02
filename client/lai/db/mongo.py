@@ -36,6 +36,17 @@ class DBMongo(DBBase):
             docs.append(Document(**row))
         return docs
 
+    def status(self):
+        last_tid = self.get_last_tid()
+        spec = {'$or': [{'tid': last_tid},
+                        {'synched': False}]}
+        fields = {'_id': 0}
+        cur = self.collection.find(spec, fields)
+        docs = []
+        for row in cur:
+            docs.append(Document(**row))
+        return docs
+
     def get(self, id):
         spec = {'id': int(id)}
         fields = {'_id': 0}
@@ -50,7 +61,7 @@ class DBMongo(DBBase):
         else:
             return self.insert(doc)
 
-    def insert(self, doc):
+    def insert(self, doc, synched=False):
         doc_ = {'id'      : self.get_next_id(),
                 'sid'     : doc.sid,
                 'tid'     : doc.tid,
@@ -58,7 +69,7 @@ class DBMongo(DBBase):
                 'keys'    : doc.keys,
                 'users'   : doc.users,
                 'usersdel': doc.usersdel,
-                'synched' : False}
+                'synched' : synched}
         rs = self.collection.insert(doc_)
         if rs:
             row = self.collection.find_one({'_id': rs})
@@ -78,7 +89,7 @@ class DBMongo(DBBase):
                     'synched' : False}
         elif type == UPDATE_RESPONSE:
             if self.collection.find({'sid': doc.sid}).count() == 0:
-                return self.insert(doc)
+                return self.insert(doc, synched=True)
             pk = 'sid'
             id = doc.sid
             doc_ = {'sid'     : doc.sid,
@@ -102,7 +113,7 @@ class DBMongo(DBBase):
 
     def delete(self, doc):
         spec = {'id': doc.id}
-        document = {'$set': {'data': None, 'keys': None}}
+        document = {'$set': {'data': None, 'keys': None, 'synched': False}}
         rs = self.collection.update(spec, document, safe=True)
         return rs['n'] == 1
 

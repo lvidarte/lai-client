@@ -99,7 +99,10 @@ def editor(*args):
     return rs
 
 def status(*args):
-    return "Not implemented yet"
+    rs = client.status()
+    if rs:
+        return rs
+    return None
 
 def adduser(*args):
     try:
@@ -123,10 +126,10 @@ def _set_user(action, id, user):
 
 def to_stdout(obj):
     if type(obj) == list:
-        fmt = "%-4s | %-24s | %-4s | %-14s | %s\n%s"
-        print fmt % ('id', 'sid', 'tid', 'users', 'keys', '-'*80)
+        fmt = "%-4s | %-24s | %-4s | %-7s | %-14s | %s\n%s"
+        print fmt % ('id', 'sid', 'tid', 'synched', 'users', 'keys', '-'*80)
         for doc in obj:
-            print fmt % (doc.id, doc.sid, doc.tid,
+            print fmt % (doc.id, doc.sid, doc.tid, doc.synched,
                          ','.join(doc.users), doc.keys,
                          "%s\n%s" % (doc.data, '-'*80))
     elif type(obj) == dict:
