@@ -6,6 +6,11 @@ import tempfile
 import codecs
 from pprint import pprint
 
+try:
+    from clint.textui import colored
+except:
+    colored = None
+
 from lai import Client, Database, Document
 
 
@@ -126,14 +131,26 @@ def _set_user(action, id, user):
         return client.save(doc)
     return False
 
-def to_stdout(obj):
+def to_stdout(obj, simple):
     if type(obj) == list:
-        fmt = "%-4s | %-24s | %-4s | %-7s | %-14s | %s\n%s"
-        print fmt % ('id', 'sid', 'tid', 'synched', 'users', 'keys', '-'*80)
-        for doc in obj:
-            print fmt % (doc.id, doc.sid, doc.tid, doc.synched,
-                         ','.join(doc.users), doc.keys,
-                         "%s\n%s" % (doc.data, '-'*80))
+        if simple:
+            for doc in obj:
+                if colored:
+                    tokens = doc.data.rsplit('#')
+                    s  = colored.blue(str(doc.id) + ': ')
+                    s += tokens[0].strip().encode('utf8')
+                    if len(tokens) == 2:
+                        s += colored.green(' #' + tokens[1].encode('utf8'))
+                    print s
+                else:
+                    print "%s: %s" % (doc.id, doc.data.encode('utf8'))
+        else:
+            fmt = "%-4s | %-24s | %-4s | %-7s | %-14s | %s\n%s"
+            print fmt % ('id', 'sid', 'tid', 'synched', 'users', 'keys', '-'*80)
+            for doc in obj:
+                print fmt % (doc.id, doc.sid, doc.tid, doc.synched,
+                             ','.join(doc.users), doc.keys,
+                             "%s\n%s" % (doc.data, '-'*80))
     elif type(obj) == dict:
         pprint(obj)
     elif obj is not None:
@@ -190,6 +207,7 @@ if __name__ == '__main__':
         '--help'   : lambda: to_stdout(get_long_help()),
     }
 
+    simple = False
     if len(sys.argv) > 1:
         rs = None
         if sys.argv[1].startswith('--'):
@@ -204,7 +222,8 @@ if __name__ == '__main__':
                     rs = fn()
         else:
             rs = search(sys.argv[1])
-        to_stdout(rs)
+            simple = True
+        to_stdout(rs, simple=simple)
     else:
         to_stdout(get_long_help())
 
