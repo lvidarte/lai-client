@@ -1,44 +1,47 @@
-Lai
-===
+Qué es lai?
+===========
 
-lai te permite guardar fácilmente comandos, snippets, y anotaciones en gral, en una base de datos local (mongo, sqlite, mysql, etc..) y tenerlas a mano en la consola para cuando las necesites::
+Como en el mundo de la informática existen miles de comandos y combinaciones de estos, shortcuts, snippets, trucos, y cosas que querés tener a mano para no olvidarte, lai te permite guardar fácilmente todo esto y cualquier anotación en gral en una base de datos local, como sqlite, mongo o mysql, y tenerlos a mano en la consola para cuando los necesites::
 
-    xleo@client1:~$ lai --add 'git fetch origin [remote-branch]:[new-local-branch]'
+    user1@client1:~$ lai --add 'git fetch origin [remote-branch]:[new-local-branch]'
 
 Luego, al buscar por 'git'::
 
-    xleo@client1:~$ lai git
+    user1@client1:~$ lai git
     1: git fetch origin [remote-branch]:[new-local-branch]
 
 También podemos traer el documento por su id::
 
-    xleo@client1:~$ lai --get 1
+    user1@client1:~$ lai --get 1
     git fetch origin [remote-branch]:[new-local-branch]
 
 Hasta acá nada muy interesante, pero lai trabaja en modo cliente-servidor, por lo que podés tener varios clientes sincronizados contra un servidor central, todo mediante comandos simples como update y commit::
 
-    xleo@client1:~$ lai --commit
+    user1@client1:~$ lai --commit
     Connecting to server..
     Commited! 1 document.
 
 Luego desde otro cliente::
 
-    xleo@client2:~$ lai --update
+    user1@client2:~$ lai --update
     Connecting to server..
     Updated! 1 document added.
     $ lai git
     1: git fetch origin [remote-branch]:[new-local-branch]
 
+
+**lai te permite tener todos tus comandos/anotaciones sincronizados entre todas las máquinas que uses.**
+
 lai también soporta usuarios y permite compartir documentos entre ellos::
 
-    xleo@client2:~$ lai --adduser 1 alfredo
-    xleo@client1:~$ lai --commit
+    user1@client2:~$ lai --adduser 1 user2
+    user1@client1:~$ lai --commit
     Connecting to server..
     Commited! 1 document.
 
-Luego el usuario alfredo descarga el documento compartido::
+Luego el usuario user2 descarga el documento compartido::
 
-    alfredo@client1:~$ lai --update
+    user2@client1:~$ lai --update
     Connecting to server..
     Updated! 1 document added.
     $ lai git
