@@ -1,16 +1,16 @@
-Qué es lai?
-===========
+lai
+===
 
-Como en el mundo de la informática existen miles de comandos y combinaciones de estos, shortcuts, snippets, trucos, y cosas que querés tener a mano para no olvidarte, lai te permite guardar fácilmente todo esto y cualquier anotación en gral en una base de datos local, como sqlite, mongo o mysql, y tenerlos a mano en la consola para cuando los necesites::
+Como en el mundo de la informática existen miles de comandos y combinaciones de estos, shortcuts, snippets, trucos, y cosas que querés tener a mano para no olvidarte, lai te permite guardar fácilmente todo esto (y cualquier anotación en gral) en una base de datos local, como sqlite, mysql o mongo, y tenerlos a mano en la consola para cuando los necesites::
 
     user1@client1:~$ lai --add 'git fetch origin [remote-branch]:[new-local-branch]'
 
-Luego, al buscar por 'git'::
+Luego, al buscar por 'git' (lai por default busca)::
 
     user1@client1:~$ lai git
     1: git fetch origin [remote-branch]:[new-local-branch]
 
-También podemos traer el documento por su id::
+También podés traer el documento por su id::
 
     user1@client1:~$ lai --get 1
     git fetch origin [remote-branch]:[new-local-branch]
