@@ -15,37 +15,54 @@ class Client:
 
     def __init__(self, database):
         self.db = database
+
         try:
             self.db.connect()
         except DatabaseException as e:
             raise ClientException(e)
 
     def update(self):
+
         try:
             data = self.fetch()
         except urllib2.URLError:
             return 'http connection error'
+
         if len(data['docs']):
             for doc_ in data['docs']:
                 doc = Document(**doc_)
-                self.db.update(doc, type=UPDATE_RESPONSE)
+
+                try: 
+                    self.db.update(doc, type=UPDATE_RESPONSE)
+                except DatabaseException as e:
+                    raise ClientException(e)
             return 'ok'
         else:
             return 'nothing to update'
 
     def commit(self):
-        docs = self.db.get_docs_for_commit()
+        try:
+            docs = self.db.get_docs_for_commit()
+        except DatabaseException as e:
+            raise ClientException(e)
+
         if len(docs):
             try:
                 data = self.fetch(docs)
             except urllib2.URLError:
-                return 'http connection error'
+                ClientException('http connection error')
+
             if 'error' in data:
                 return data['error']
             else:
                 for doc_ in data['docs']:
                     doc = Document(**doc_)
-                    self.db.update(doc, type=COMMIT_RESPONSE)
+
+                    try:
+                        self.db.update(doc, type=COMMIT_RESPONSE)
+                    except DatabaseException as e:
+                        raise ClientException(e)
+
                 return 'ok'
         else:
             return 'nothing to commit'

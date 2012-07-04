@@ -72,6 +72,8 @@ class DBSqlite(DBBase):
                 doc = Document(**row)
                 doc.users    = row[5].split(',')
                 doc.usersdel = row[6].split(',')
+            else:
+                doc = None
         except Exception as e:
             DatabaseException(e)
         else:
@@ -86,7 +88,7 @@ class DBSqlite(DBBase):
         except Exception as e:
             DatabaseException(e)
         else:
-            return rc.rowcount
+            return True
 
     def search(self, search_text):
 
@@ -154,10 +156,11 @@ class DBSqlite(DBBase):
 
             rs = self.cursor.execute(sql_insert, args)
             self.connection.commit()
+            doc.id = self.cursor.lastrowid
         except Exception as e:
             raise DatabaseException(e)
         else:
-            return rs.rowcount
+            return doc
 
     def _update(self, doc, synched=False):
 
@@ -179,7 +182,7 @@ class DBSqlite(DBBase):
         except Exception as e:
             raise DatabaseException(e)
         else:
-            return rs.rowcount
+            return doc
 
     def _update_transaction(self, doc, synched=False):
 
@@ -196,7 +199,7 @@ class DBSqlite(DBBase):
         except Exception as e:
             raise DatabaseException(e)
         else:
-            return rs.rowcount
+            return doc
 
     def _exists(self, key='id', value=None):
 
@@ -213,6 +216,9 @@ class DBSqlite(DBBase):
                     return row['id']
         else:
             return False
+    
+    def _create_doc(self, row):
+        pass
 
     def docs_count(self):
 
