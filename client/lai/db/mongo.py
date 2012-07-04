@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
 
 import pymongo
+from pymongo.errors import AutoReconnect
 from lai import config
 from lai.db.base import DBBase
-from lai.database import UPDATE_RESPONSE, COMMIT_RESPONSE
+from lai.database import DatabaseException, UPDATE_RESPONSE, COMMIT_RESPONSE
 from lai import Document
 
 
 class DBMongo(DBBase):
 
     def connect(self): 
-        self.connection = pymongo.Connection(self.config['HOST'],
-                                             self.config['PORT'])
-        self.db = self.connection[self.config['NAME']]
-        self.collection = self.db[self.config['TABLE']]
-
+        try: 
+            self.connection = pymongo.Connection(self.config['HOST'],
+                                                 self.config['PORT'])
+            self.db = self.connection[self.config['NAME']]
+            self.collection = self.db[self.config['TABLE']]
+        except AutoReconnect:
+            raise DatabaseException("It's not possible connect to the database")
+        
     def get_last_tid(self):
         doc = self.collection.find_one({'tid': {'$gt': 0}}, sort=[('tid', -1)])
         if doc:
