@@ -6,13 +6,19 @@ import json
 
 from lai import config
 from lai.document import Document
-from lai.database import UPDATE_RESPONSE, COMMIT_RESPONSE
+from lai.database import DatabaseException, UPDATE_RESPONSE, COMMIT_RESPONSE
 
+class ClientException(Exception):
+    pass
 
 class Client:
 
     def __init__(self, database):
         self.db = database
+        try:
+            self.db.connect()
+        except DatabaseException as e:
+            raise ClientException(e)
 
     def update(self):
         try:
@@ -50,7 +56,12 @@ class Client:
     def save(self, doc):
         if doc.keys is None:
             doc.set_keys()
-        return self.db.save(doc)
+        try:
+            doc = self.db.save(doc)
+        except DatabaseException as e:
+            raise ClientException(e)
+        else:
+            return doc
 
     def delete(self, doc):
         return self.db.delete(doc)

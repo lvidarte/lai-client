@@ -12,6 +12,7 @@ except:
     colored = None
 
 from lai import Client, Database, Document
+from lai.client import ClientException
 
 
 def add(*args):
@@ -23,7 +24,10 @@ def add(*args):
         doc = Document(data)
         if len(args) == 2:
             doc.set_keys(args[1])
-        return client.save(doc)
+        try:
+            client.save(doc)
+        except ClientException as e:
+            return e
 
 def get(*args):
     try:
@@ -190,40 +194,43 @@ def get_long_help(msg=None):
 
 
 if __name__ == '__main__':
-
-    client = Client(Database())
-
-    METHODS = {
-        '--get'    : get,
-        '--add'    : add,
-        '--edit'   : edit,
-        '--del'    : delete,
-        '--commit' : commit,
-        '--update' : update,
-        '--editor' : editor,
-        '--status' : status,
-        '--adduser': adduser,
-        '--deluser': deluser,
-        '--help'   : lambda: to_stdout(get_long_help()),
-    }
-
-    simple = False
-    if len(sys.argv) > 1:
-        rs = None
-        if sys.argv[1].startswith('--'):
-            try:
-                fn = METHODS[sys.argv[1]]
-            except KeyError:
-                to_stdout(get_long_help("Invalid argument"))
-            else:
-                if len(sys.argv) > 2:
-                    rs = fn(*sys.argv[2:])
-                else:
-                    rs = fn()
-        else:
-            rs = search(sys.argv[1])
-            simple = True
-        to_stdout(rs, simple=simple)
+    
+    try:
+        client = Client(Database())
+    except ClientException as e:
+        sys.stderr.write("%s\n" % e)
     else:
-        to_stdout(get_long_help())
+        METHODS = {
+            '--get'    : get,
+            '--add'    : add,
+            '--edit'   : edit,
+            '--del'    : delete,
+            '--commit' : commit,
+            '--update' : update,
+            '--editor' : editor,
+            '--status' : status,
+            '--adduser': adduser,
+            '--deluser': deluser,
+            '--help'   : lambda: to_stdout(get_long_help()),
+        }
+
+        simple = False
+        if len(sys.argv) > 1:
+            rs = None
+            if sys.argv[1].startswith('--'):
+                try:
+                    fn = METHODS[sys.argv[1]]
+                except KeyError:
+                    to_stdout(get_long_help("Invalid argument"))
+                else:
+                    if len(sys.argv) > 2:
+                        rs = fn(*sys.argv[2:])
+                    else:
+                        rs = fn()
+            else:
+                rs = search(sys.argv[1])
+                simple = True
+            to_stdout(rs, simple=simple)
+        else:
+            to_stdout(get_long_help())
 
