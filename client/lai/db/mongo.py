@@ -20,48 +20,56 @@ class DBMongo(DBBase):
             raise DatabaseException("It's not possible connect to the database")
         
     def get_last_tid(self):
-        doc = self.collection.find_one({'tid': {'$gt': 0}}, sort=[('tid', -1)])
-        if doc:
-            return doc['tid']
+        try:
+            spec = {'tid': {'$gt': 0}}
+            sort = [('tid', -1)]
+            row = self.collection.find_one(spec, sort=sort)
+        except Exception as e:
+            DatabaseException(e)
+        if row:
+            return row['tid']
         return 0
 
     def get_next_id(self):
-        query = {'_id': self.config['TABLE']}
-        update = {'$inc': {'last_id': 1}}
-        collection = self.db['counter']
-        row = collection.find_and_modify(query, update, upsert=True, new=True)
+        try:
+            query = {'_id': self.config['TABLE']}
+            update = {'$inc': {'last_id': 1}}
+            collection = self.db['counter']
+            row = collection.find_and_modify(query, update,
+                                             upsert=True, new=True)
+        except Exception as e:
+            DatabaseException(e)
         return row['last_id']
 
     def search(self, regex):
-        spec = {'keys': {'$regex': regex}}
-        fields = {'_id': 0}
-        cur = self.collection.find(spec, fields)
-        docs = []
-        for row in cur:
-            docs.append(Document(**row))
-        return docs
+        try:
+            spec = {'keys': {'$regex': regex}}
+            fields = {'_id': 0}
+            cur = self.collection.find(spec, fields)
+        except Exception as e:
+            DatabaseException(e)
+        return [Document(**row) for row in cur]
 
     def status(self):
-        last_tid = self.get_last_tid()
-        spec = {'$or': [{'tid': last_tid},
-                        {'synched': False}]}
-        fields = {'_id': 0}
-        cur = self.collection.find(spec, fields)
-        docs = []
-        for row in cur:
-            docs.append(Document(**row))
-        return docs
+        try:
+            last_tid = self.get_last_tid()
+            spec = {'$or': [{'tid': last_tid},
+                            {'synched': False}]}
+            fields = {'_id': 0}
+            cur = self.collection.find(spec, fields)
+        except Exception as e:
+            DatabaseException(e)
+        return [Document(**row) for row in cur]
 
     def get(self, id):
-        spec = {'id': int(id)}
-        fields = {'_id': 0}
         try:
+            spec = {'id': int(id)}
+            fields = {'_id': 0}
             row = self.collection.find_one(spec, fields)
         except Exception as e:
             DatabaseException(e)
         if row:
-            doc = Document(**row)
-            return doc
+            return Document(**row)
         return None
 
     def save(self, doc):
@@ -122,9 +130,10 @@ class DBMongo(DBBase):
         try:
             spec = {'synched': False}
             fields = {'_id': 0, 'synched': 0}
-            return self.collection.find(spec, fields)
+            cur = self.collection.find(spec, fields)
         except Exception as e:
             DatabaseException(e)
+        return [row for row in cur]
 
     def __str__(self):
         return "%s://%s:%s/%s?%s" % (self.config['ENGINE'],
