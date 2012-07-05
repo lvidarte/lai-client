@@ -8,3 +8,4 @@ Requirements/Use:
 2. CLIENT
  * mockito
  * pymongo
+ * clint (optional for colored ouput)

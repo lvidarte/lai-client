@@ -135,9 +135,16 @@ def _set_user(action, id, user):
         return client.save(doc)
     return False
 
-def to_stdout(obj, simple):
+def to_stdout(obj, verbose=False):
     if type(obj) == list:
-        if simple:
+        if verbose:
+            fmt = "%-4s | %-24s | %-4s | %-7s | %-14s | %s\n%s"
+            print fmt % ('id', 'sid', 'tid', 'synched', 'users', 'keys', '-'*80)
+            for doc in obj:
+                print fmt % (doc.id, doc.sid, doc.tid, doc.synched,
+                             ','.join(doc.users), doc.keys,
+                             "%s\n%s" % (doc.data, '-'*80))
+        else:
             for doc in obj:
                 if colored:
                     tokens = doc.data.rsplit('#')
@@ -148,13 +155,6 @@ def to_stdout(obj, simple):
                     print s
                 else:
                     print "%s: %s" % (doc.id, doc.data.encode('utf8'))
-        else:
-            fmt = "%-4s | %-24s | %-4s | %-7s | %-14s | %s\n%s"
-            print fmt % ('id', 'sid', 'tid', 'synched', 'users', 'keys', '-'*80)
-            for doc in obj:
-                print fmt % (doc.id, doc.sid, doc.tid, doc.synched,
-                             ','.join(doc.users), doc.keys,
-                             "%s\n%s" % (doc.data, '-'*80))
     elif type(obj) == dict:
         pprint(obj)
     elif obj is not None:
@@ -214,7 +214,7 @@ if __name__ == '__main__':
             '--help'   : lambda: to_stdout(get_long_help()),
         }
 
-        simple = False
+        verbose = True
         if len(sys.argv) > 1:
             rs = None
             if sys.argv[1].startswith('--'):
@@ -229,8 +229,8 @@ if __name__ == '__main__':
                         rs = fn()
             else:
                 rs = search(sys.argv[1])
-                simple = True
-            to_stdout(rs, simple=simple)
+                verbose = False
+            to_stdout(rs, verbose=verbose)
         else:
             to_stdout(get_long_help())
 
