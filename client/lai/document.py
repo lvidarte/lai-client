@@ -32,8 +32,7 @@ class Document:
             self.users.append(user)
             if user in self.usersdel:
                 del self.usersdel[self.usersdel.index(user)]
-            return True
-        return False
+        return True
 
     def del_user(self, user):
         if user in self.users and len(self.users) > 1 and \

@@ -4,7 +4,6 @@ import os
 import sys
 import tempfile
 import codecs
-from pprint import pprint
 
 try:
     from clint.textui import colored
@@ -19,63 +18,120 @@ def add(*args):
     try:
         data = args[0]
     except IndexError:
-        return get_short_help("Argument TEXT required")
-    else:
-        doc = Document(data)
-        if len(args) == 2:
-            doc.set_keys(args[1])
-        try:
-            client.save(doc)
-        except ClientException as e:
-            return e
+        sys.stdout.write('Argument TEXT required\n')
+        return None
+    doc = Document(data)
+    if len(args) == 2:
+        doc.set_keys(args[1])
+    try:
+        doc = client.save(doc)
+    except ClientException as e:
+        sys.stdout.write(str(e) + '\n')
 
 def get(*args):
     try:
         id = args[0]
     except IndexError:
-        return get_short_help("Argument ID required")
-    else:
+        sys.stdout.write('Argument ID required\n')
+        return None
+    try:
         doc = client.get(id)
-        if doc:
-            return [doc]
+    except ClientException as e:
+        sys.stdout.write(str(e) + '\n')
+    if doc.data:
+        print doc.data
+
+def getall(*args):
+    docs = client.getall()
+    for doc in docs:
+        print "%d: %s" % (doc.id, doc.data)
+
+def show(*args):
+    try:
+        id = args[0]
+    except IndexError:
+        sys.stdout.write('Argument ID required\n')
+        return None
+    try:
+        doc = client.get(id)
+    except ClientException as e:
+        sys.stdout.write(str(e) + '\n')
+    if doc:
+        for key in ('id', 'sid', 'tid', 'synched',
+                    'users', 'usersdel', 'keys', 'data'):
+            value = getattr(doc, key)
+            if type(value) == list:
+                value = ','.join(value)
+            print "%s: %s" % (key, value)
 
 def edit(*args):
     try:
         id = args[0]
         data = args[1]
     except IndexError:
-        return get_short_help("Arguments ID and NEW_TEXT required")
-    else:
-        doc = client.get(id)
-        doc.data = data
-        return client.save(doc)
+        sys.stdout.write('Arguments ID and NEW_TEXT required\n')
+        return None
+    doc = client.get(id)
+    doc.data = data
+    try:
+        doc = client.save(doc)
+    except ClientException as e:
+        sys.stdout.write(str(e) + '\n')
 
 def delete(*args):
     try:
         doc = client.get(args[0])
     except IndexError:
-        return get_short_help("Argument ID required")
-    else:
-        return client.delete(doc)
+        sys.stdout.write('Argument ID required\n')
+    try:
+        doc = client.delete(doc)
+    except ClientException as e:
+        sys.stdout.write(str(e) + '\n')
 
 def search(q):
-    rs = client.search(q)
+    try:
+        rs = client.search(q)
+    except ClientException as e:
+        sys.stdout.write(str(e) + '\n')
     if rs:
-        return rs
-    return None
+        for doc in rs:
+            if colored:
+                tokens = doc.data.rsplit('#')
+                s  = colored.blue(str(doc.id) + ': ')
+                s += tokens[0].strip().encode('utf8')
+                if len(tokens) == 2:
+                    s += colored.green(' #' + tokens[1].encode('utf8'))
+                print s
+            else:
+                print "%s: %s" % (doc.id, doc.data.encode('utf8'))
 
 def update(*args):
-    return client.update()
+    try:
+        rs = client.update()
+        if rs is None:
+            print "Nothing to update"
+        else:
+            print "Updated %d documents" % rs
+    except ClientException as e:
+        sys.stdout.write(str(e) + '\n')
 
 def commit(*args):
-    return client.commit()
+    try:
+        rs = client.commit()
+        if rs is None:
+            print "Nothing to commit"
+        else:
+            print "Commited %d documents" % rs
+    except ClientException as e:
+        sys.stdout.write(str(e) + '\n')
 
 def editor(*args):
     editor_cmd = os.getenv('EDITOR')
     keys_line = '------------- enter keywords before this line -------------'
 
     if editor_cmd is None:
-        return to_stdout("Environment var EDITOR is unset")
+        sys.stdout.write("Environment var EDITOR is unset\n")
+        return None
 
     if len(args):
         doc = client.get(args[0])
@@ -108,22 +164,24 @@ def editor(*args):
     return rs
 
 def status(*args):
-    rs = client.status()
-    if rs:
-        return rs
-    return None
+    try:
+        docs = client.status()
+    except ClientException as e:
+        sys.stdout.write(str(e) + '\n')
+    for doc in docs:
+        print "%d: %s" % (doc.id, doc.data[:70])
 
 def adduser(*args):
     try:
         return _set_user('add', *args)
     except (IndexError, TypeError):
-        return get_short_help("Arguments ID and USER required")
+        sys.stdout.write('Arguments ID and USER required\n')
 
 def deluser(*args):
     try:
         return _set_user('del', *args)
     except (IndexError, TypeError):
-        return get_short_help("Arguments ID and USER required")
+        sys.stdout.write('Arguments ID and USER required\n')
 
 def _set_user(action, id, user):
     doc = client.get(id)
@@ -132,76 +190,49 @@ def _set_user(action, id, user):
     elif action == 'del':
         rs = doc.del_user(user)
     if rs == True:
-        return client.save(doc)
-    return False
+        try:
+            doc = client.save(doc)
+        except ClientException as e:
+            sys.stdout.write(str(e) + '\n')
+    else:
+        sys.stdout.write('Can\'t %s user\n' % action)
 
-def to_stdout(obj, verbose=False):
-    if type(obj) == list:
-        if verbose:
-            fmt = "%-4s | %-24s | %-4s | %-7s | %-14s | %s\n%s"
-            print fmt % ('id', 'sid', 'tid', 'synched', 'users', 'keys', '-'*80)
-            for doc in obj:
-                print fmt % (doc.id, doc.sid, doc.tid, doc.synched,
-                             ','.join(doc.users), doc.keys,
-                             "%s\n%s" % (doc.data, '-'*80))
-        else:
-            for doc in obj:
-                if colored:
-                    tokens = doc.data.rsplit('#')
-                    s  = colored.blue(str(doc.id) + ': ')
-                    s += tokens[0].strip().encode('utf8')
-                    if len(tokens) == 2:
-                        s += colored.green(' #' + tokens[1].encode('utf8'))
-                    print s
-                else:
-                    print "%s: %s" % (doc.id, doc.data.encode('utf8'))
-    elif type(obj) == dict:
-        pprint(obj)
-    elif obj is not None:
-        print obj
-
-def get_short_help(msg=None):
-    out = ''
-    if msg:
-        out = msg + '\n\n'
-    out += "Usage: lai WORD\n"
+def print_short_help():
+    out  = "Usage: lai WORD\n"
     out += "       lai [--update | --commit | --status]\n"
     out += "       lai [--add TEXT | --edit ID NEW_TEXT | --editor [ID]]\n"
-    out += "       lai [--get ID | --del ID]\n"
-    out += "       lai [--adduser ID USER | --deluser ID USER]"
-    return out
+    out += "       lai [--get ID | --show ID | --del ID | --getall]\n"
+    out += "       lai [--adduser ID USER | --deluser ID USER]\n"
+    out += "       lai [--help]"
+    print out
 
-def get_long_help(msg=None):
-    out = ''
-    if msg:
-        out = msg + '\n\n'
-    out += "Usage: lai WORD                  Performs a search\n"
+def print_long_help():
+    out  = "Usage: lai WORD                  Performs a search\n"
     out += "       lai --add TEXT            Add new doc\n"
     out += "       lai --edit ID NEW_TEXT    Edit doc\n"
     out += "       lai --editor [ID]         Add or edit with default text editor\n"
     out += "       lai --get ID              Get a specific doc\n"
+    out += "       lai --getall              Get all docs\n"
+    out += "       lai --show ID             Show all metadata from a specific doc\n"
     out += "       lai --del ID              Delete doc\n"
-    out += "       lai --update              Update changes\n"
-    out += "       lai --commit              Commit changes\n"
+    out += "       lai --update              Update changes from server\n"
+    out += "       lai --commit              Commit changes to server\n"
     out += "       lai --status              Show actual status\n"
     out += "       lai --adduser ID USER     Add user to doc\n"
     out += "       lai --deluser ID USER     Del user from doc"
-    return out
-
-    out = ""
-    if msg:
-        out = msg + '\n'
+    print out
 
 
 if __name__ == '__main__':
-    
     try:
         client = Client(Database())
     except ClientException as e:
-        sys.stderr.write("%s\n" % e)
+        sys.stderr.write(str(e) + '\n')
     else:
         METHODS = {
             '--get'    : get,
+            '--getall' : getall,
+            '--show'   : show,
             '--add'    : add,
             '--edit'   : edit,
             '--del'    : delete,
@@ -211,26 +242,23 @@ if __name__ == '__main__':
             '--status' : status,
             '--adduser': adduser,
             '--deluser': deluser,
-            '--help'   : lambda: to_stdout(get_long_help()),
+            '--help'   : print_long_help,
         }
 
-        verbose = True
         if len(sys.argv) > 1:
             rs = None
             if sys.argv[1].startswith('--'):
                 try:
                     fn = METHODS[sys.argv[1]]
                 except KeyError:
-                    to_stdout(get_long_help("Invalid argument"))
+                    sys.stderr.write('Invalid argument\n')
                 else:
                     if len(sys.argv) > 2:
                         rs = fn(*sys.argv[2:])
                     else:
                         rs = fn()
             else:
-                rs = search(sys.argv[1])
-                verbose = False
-            to_stdout(rs, verbose=verbose)
+                search(sys.argv[1])
         else:
-            to_stdout(get_long_help())
+            print_short_help()
 

@@ -7,7 +7,7 @@ DATABASE1 = {
     'HOST'  : 'localhost',
     'PORT'  : 27017,
     'NAME'  : 'lai',
-    'TABLE' : '%s_%s' % (USER, 'client1'),
+    'TABLE' : '%s_%s' % (USER, 'client2'),
 }
 
 DATABASE2 = {

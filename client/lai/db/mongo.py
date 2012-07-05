@@ -53,8 +53,7 @@ class DBMongo(DBBase):
     def status(self):
         try:
             last_tid = self.get_last_tid()
-            spec = {'$or': [{'tid': last_tid},
-                            {'synched': False}]}
+            spec = {'synched': False}
             fields = {'_id': 0}
             cur = self.collection.find(spec, fields)
         except Exception as e:
@@ -71,6 +70,13 @@ class DBMongo(DBBase):
         if row:
             return Document(**row)
         return None
+
+    def getall(self):
+        try:
+            cur = self.collection.find({}, {'_id': 0})
+        except Exception as e:
+            DatabaseException(e)
+        return [Document(**row) for row in cur]
 
     def save(self, doc):
         if doc.id:
