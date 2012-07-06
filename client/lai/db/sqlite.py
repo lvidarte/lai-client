@@ -151,6 +151,7 @@ class DBSqlite(DBBase):
         return docs
 
     def getall(self):
+
         docs = []
         try:
             sql_query = '''SELECT * FROM %s ORDER BY id ''' % self.config['TABLE']
