@@ -150,6 +150,20 @@ class DBSqlite(DBBase):
             docs.append(doc)
         return docs
 
+    def getall(self):
+        docs = []
+        try:
+            sql_query = '''SELECT * FROM %s ORDER BY id ''' % self.config['TABLE']
+            self.cursor.execute(sql_query)
+            rows = self.cursor.fetchall()
+            for row in rows:
+                doc = Document(**row)
+                docs.append(doc)
+        except Exception as e:
+            raise DatabaseException(e)
+        else:
+            return docs
+
     def _create(self, doc, synched=False):
 
         sql_insert = '''INSERT INTO %s
