@@ -51,13 +51,7 @@ class DBMongo(DBBase):
         return [Document(**row) for row in cur]
 
     def status(self):
-        try:
-            spec = {'synched': False}
-            fields = {'_id': 0}
-            cur = self.collection.find(spec, fields)
-        except Exception as e:
-            DatabaseException(e)
-        return [Document(**row) for row in cur]
+        return self.get_docs_for_commit()
 
     def get(self, id):
         try:
@@ -134,11 +128,11 @@ class DBMongo(DBBase):
     def get_docs_for_commit(self):
         try:
             spec = {'synched': False}
-            fields = {'_id': 0, 'synched': 0}
+            fields = {'_id': 0}
             cur = self.collection.find(spec, fields)
         except Exception as e:
             DatabaseException(e)
-        return [row for row in cur]
+        return [Document(**row) for row in cur]
 
     def __str__(self):
         return "%s://%s:%s/%s?%s" % (self.config['ENGINE'],
