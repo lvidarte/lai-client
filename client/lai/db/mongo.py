@@ -52,12 +52,12 @@ class DBMongo(DBBase):
 
     def status(self):
         docs = []
-        docs_for_commits =  self.get_docs_for_commit()
-        for doc in docs:
-            doc = Document(**row)
-            doc.append(doc)
+        dfcs =  self.get_docs_for_commit()
+        for dfc in dfcs:
+            doc = Document(**dfc)
+            docs.append(doc)
         return docs
-
+       
     def get(self, id):
         try:
             spec = {'id': int(id)}
