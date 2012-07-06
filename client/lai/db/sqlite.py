@@ -131,17 +131,24 @@ class DBSqlite(DBBase):
         try:
             self.cursor.execute('''SELECT tid
                                    FROM %s
-                                   ORDER BY tid DESC
-                                   LIMIT 1''' % (self.config['TABLE']))
+                                   ORDER BY tid DESC''' % (self.config['TABLE']))
 
             row = self.cursor.fetchone()
         except Exception as e:
             raise DatabaseException(e)
         else:
-            if row:
+            if row[0]:
                 return row[0]
             else:
                 return 0
+
+    def status(self):
+        docs = []
+        dfcs = self.get_docs_for_commit()
+        for dfc in dfcs:
+            doc = Document(**dfc)
+            docs.append(doc)
+        return docs
 
     def _create(self, doc, synched=False):
 
@@ -212,7 +219,7 @@ class DBSqlite(DBBase):
             except Exception as e:
                 DatabaseException(e)
             else:
-                if row:
+                if row[0]:
                     return row['id']
         else:
             return False
