@@ -51,7 +51,12 @@ class DBMongo(DBBase):
         return [Document(**row) for row in cur]
 
     def status(self):
-        return self.get_docs_for_commit()
+        docs = []
+        docs_for_commits =  self.get_docs_for_commit()
+        for doc in docs:
+            doc = Document(**row)
+            doc.append(doc)
+        return docs
 
     def get(self, id):
         try:
@@ -132,7 +137,7 @@ class DBMongo(DBBase):
             cur = self.collection.find(spec, fields)
         except Exception as e:
             DatabaseException(e)
-        return [Document(**row) for row in cur]
+        return [row for row in cur]
 
     def __str__(self):
         return "%s://%s:%s/%s?%s" % (self.config['ENGINE'],
