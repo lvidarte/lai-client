@@ -18,7 +18,7 @@ class DBMongo(DBBase):
             self.collection = self.db[self.config['TABLE']]
         except AutoReconnect:
             raise DatabaseException("It's not possible connect to the database")
-        
+
     def get_last_tid(self):
         try:
             spec = {'tid': {'$gt': 0}}
@@ -52,7 +52,6 @@ class DBMongo(DBBase):
 
     def status(self):
         try:
-            last_tid = self.get_last_tid()
             spec = {'synched': False}
             fields = {'_id': 0}
             cur = self.collection.find(spec, fields)

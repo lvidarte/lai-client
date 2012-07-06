@@ -169,7 +169,11 @@ def status(*args):
     except ClientException as e:
         sys.stdout.write(str(e) + '\n')
     for doc in docs:
-        print "%d: %s" % (doc.id, doc.data[:70])
+        if doc.data is None:
+            data = "[DELETED]"
+        else:
+            data = doc.data
+        print "%d: %s" % (doc.id, data[:70])
 
 def adduser(*args):
     try:
