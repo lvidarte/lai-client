@@ -120,7 +120,8 @@ class DBSqlite(DBBase):
                 doc = Document(**row)
                 doc.users    = row[5].split(',')
                 doc.usersdel = row[6].split(',')
-                docs.append(doc.to_dict())
+                print doc
+                docs.append(doc)
         except Exception as e:
             DatabaseException(e)
         else:
@@ -142,6 +143,9 @@ class DBSqlite(DBBase):
                 return row[0]
             else:
                 return 0
+
+    def status(self):
+        return self.get_docs_for_commit()
 
     def _create(self, doc, synched=False):
 
