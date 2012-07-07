@@ -1,0 +1,7 @@
+PyGithub==1.2
+argparse==1.2.1
+clint==0.3.1
+distribute==0.6.24
+mockito==0.5.1
+pymongo==2.2
+wsgiref==0.1.2
