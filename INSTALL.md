@@ -18,5 +18,5 @@
 
 ### Install Client requirements with pip
 
-  cd client
-  pip install -r requirements.txt
+    cd client
+    pip install -r requirements.txt
