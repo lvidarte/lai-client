@@ -13,7 +13,6 @@ except:
 from lai import Client, Database, Document
 from lai.client import ClientException
 
-
 def add(*args):
     try:
         data = args[0]
@@ -187,6 +186,20 @@ def deluser(*args):
     except (IndexError, TypeError):
         sys.stdout.write('Arguments ID and USER required\n')
 
+def send_to_gist(*args):
+    try:
+        id = args[0]
+    except IndexError:
+        sys.stdout.write('Argument ID required\n')
+        return None
+    try:
+        doc = client.get(id)
+        html_url = client.send_to_gist(doc)
+        sys.stdout.write(html_url + '\n')
+
+    except ClientException as e:
+        sys.stdout.write(str(e) + '\n')
+
 def _set_user(action, id, user):
     doc = client.get(id)
     if action == 'add':
@@ -207,6 +220,7 @@ def print_short_help():
     out += "       lai [--add TEXT | --edit ID NEW_TEXT | --editor [ID]]\n"
     out += "       lai [--get ID | --show ID | --del ID | --getall]\n"
     out += "       lai [--adduser ID USER | --deluser ID USER]\n"
+    out += "       lai [--gist ID]\n"
     out += "       lai [--help]"
     print out
 
@@ -219,6 +233,7 @@ def print_long_help():
     out += "       lai --getall              Get all docs\n"
     out += "       lai --show ID             Show all metadata from a specific doc\n"
     out += "       lai --del ID              Delete doc\n"
+    out += "       lai --gist ID             Send doc to Github Gist\n"
     out += "       lai --update              Update changes from server\n"
     out += "       lai --commit              Commit changes to server\n"
     out += "       lai --status              Show actual status\n"
@@ -246,6 +261,7 @@ if __name__ == '__main__':
             '--status' : status,
             '--adduser': adduser,
             '--deluser': deluser,
+            '--gist'   : send_to_gist,
             '--help'   : print_long_help,
         }
 

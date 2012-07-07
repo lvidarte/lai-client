@@ -5,6 +5,7 @@ import urllib2
 import json
 
 from lai import config
+from lai.gist import Gist, GistException
 from lai.document import Document
 from lai.database import DatabaseException, UPDATE_RESPONSE, COMMIT_RESPONSE
 
@@ -111,6 +112,12 @@ class Client:
         tid = self.db.get_last_tid()
         return "%s/%s/%s" % (config.SERVER, config.USER, tid)
 
+    def send_to_gist(self, doc):
+        try:
+            g = Gist(config.GITHUB_USER, config.GITHUB_PASSWORD)
+            return g.create(True, doc)
+        except GistException as e:
+            raise ClientException(e)
 
 if __name__ == '__main__':
     from lai.database import Database
