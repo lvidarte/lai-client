@@ -1,6 +1,7 @@
 SERVER = "http://localhost:8888"
-
-USER = "xleo"
+USER = "alfredormz"
+GITHUB_USER = "alfredormz"
+GITHUB_PASSWORD = "********"
 
 DATABASE1 = {
     'ENGINE': 'mongo',
@@ -16,5 +17,5 @@ DATABASE2 = {
     'TABLE' : '%s_%s' % (USER, 'client1'),
 }
 
-DATABASE = DATABASE1
+DATABASE = DATABASE2
 
