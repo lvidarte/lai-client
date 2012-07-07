@@ -5,6 +5,11 @@
  * pymongo
  * lettuce
 
+### Install Server requirements with pip
+
+  cd server
+  pip install -r requirements.txt
+
 ## CLIENT
  * mockito
  * pymongo
