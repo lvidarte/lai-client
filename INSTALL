@@ -9,3 +9,4 @@ Requirements/Use:
  * mockito
  * pymongo
  * clint (optional for colored ouput)
+ * pygithub
