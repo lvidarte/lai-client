@@ -15,6 +15,7 @@
  * pymongo
  * clint (optional for colored ouput)
  * pygithub
+ * gtk or PyQt4 or xclip(optional for copy to clipboard)
 
 ### Install Client requirements with pip
 
