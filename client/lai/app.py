@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import codecs
+import pyperclip
 
 try:
     from clint.textui import colored
@@ -44,6 +45,20 @@ def getall(*args):
     docs = client.getall()
     for doc in docs:
         print "%d: %s" % (doc.id, doc.data)
+
+def clip(*args):
+    try:
+        id = args[0]
+    except IndexError:
+        sys.stdout.write('Argument ID required\n')
+        return None
+    try:
+        doc = client.get(id)
+    except ClientException as e:
+        sys.stdout.write(str(e) + '\n')
+    if doc.data:
+        pyperclip.copy(doc.data)
+        print doc.data
 
 def show(*args):
     try:
@@ -218,7 +233,7 @@ def print_short_help():
     out  = "Usage: lai WORD\n"
     out += "       lai [--update | --commit | --status]\n"
     out += "       lai [--add TEXT | --edit ID NEW_TEXT | --editor [ID]]\n"
-    out += "       lai [--get ID | --show ID | --del ID | --getall]\n"
+    out += "       lai [--get ID | --clip ID | --show ID | --del ID | --getall]\n"
     out += "       lai [--adduser ID USER | --deluser ID USER]\n"
     out += "       lai [--gist ID]\n"
     out += "       lai [--help]"
@@ -230,6 +245,7 @@ def print_long_help():
     out += "       lai --edit ID NEW_TEXT    Edit doc\n"
     out += "       lai --editor [ID]         Add or edit with default text editor\n"
     out += "       lai --get ID              Get a specific doc\n"
+    out += "       lai --clip ID             Show and copy to clipboard a specific doc\n"
     out += "       lai --getall              Get all docs\n"
     out += "       lai --show ID             Show all metadata from a specific doc\n"
     out += "       lai --del ID              Delete doc\n"
@@ -251,6 +267,7 @@ if __name__ == '__main__':
         METHODS = {
             '--get'    : get,
             '--getall' : getall,
+            '--clip'   : clip,
             '--show'   : show,
             '--add'    : add,
             '--edit'   : edit,

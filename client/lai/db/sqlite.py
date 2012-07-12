@@ -7,7 +7,7 @@ from lai import Document
 
 class DBSqlite(DBBase):
 
-    def connect(self): 
+    def connect(self):
         '''Connect to the database'''
         try:
             self.connection = sqlite.connect(self.config['NAME'])
@@ -44,7 +44,7 @@ class DBSqlite(DBBase):
                                 usersdel TEXT,
                                 synched  INTEGER DEFAULT 0)
                             ''' % self.config['TABLE'])
-        
+
     def save(self, doc, synched=False):
 
         if doc.id is None:
@@ -78,11 +78,11 @@ class DBSqlite(DBBase):
             DatabaseException(e)
         else:
             return doc
-    
+
     def delete(self, doc):
         try:
-            rc = self.connection.execute('''UPDATE %s 
-                                          SET data=NULL, keys=NULL, synched=0 
+            rc = self.connection.execute('''UPDATE %s
+                                          SET data=NULL, keys=NULL, synched=0
                                           WHERE id = %s''' % (self.config['TABLE'], doc.id))
             self.connection.commit()
         except Exception as e:
@@ -137,7 +137,7 @@ class DBSqlite(DBBase):
         except Exception as e:
             raise DatabaseException(e)
         else:
-            if row[0]:
+            if row is not None:
                 return row[0]
             else:
                 return 0
@@ -173,7 +173,7 @@ class DBSqlite(DBBase):
         ''' % self.config['TABLE']
 
         try:
-            args = (doc.tid, doc.sid, doc.data, doc.keys, 
+            args = (doc.tid, doc.sid, doc.data, doc.keys,
                     ','.join(doc.users), ','.join(doc.usersdel), synched)
 
             rs = self.cursor.execute(sql_insert, args)
@@ -197,7 +197,7 @@ class DBSqlite(DBBase):
                         WHERE id = %d
                      ''' % (self.config['TABLE'], doc.id)
         try:
-            args =  (doc.sid, doc.tid, doc.data, doc.keys, 
+            args =  (doc.sid, doc.tid, doc.data, doc.keys,
                     ','.join(doc.users), ','.join(doc.usersdel), synched)
             rs = self.cursor.execute(sql_update, args)
             self.connection.commit()
@@ -234,11 +234,11 @@ class DBSqlite(DBBase):
             except Exception as e:
                 DatabaseException(e)
             else:
-                if row[0]:
+                if row is not None:
                     return row['id']
         else:
             return False
-    
+
     def _create_doc(self, row):
         pass
 
