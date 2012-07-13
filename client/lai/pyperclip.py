@@ -44,6 +44,8 @@
 
 import platform, os
 
+setcb = None
+getcb = None
 def winGetClipboard():
     ctypes.windll.user32.OpenClipboard(0)
     pcontents = ctypes.windll.user32.GetClipboardData(1) # 1 is CF_TEXT
