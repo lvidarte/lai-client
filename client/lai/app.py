@@ -4,7 +4,6 @@ import os
 import sys
 import tempfile
 import codecs
-import pyperclip
 
 try:
     from clint.textui import colored
@@ -57,8 +56,12 @@ def clip(*args):
     except ClientException as e:
         sys.stdout.write(str(e) + '\n')
     if doc.data:
-        pyperclip.copy(doc.data)
-        print doc.data
+        import pyperclip
+        if pyperclip.copy is not None:
+            pyperclip.copy(doc.data)
+            print doc.data
+        else:
+            sys.stdout.write('Can\'t copy the content to the clipboard. Do you have xclip installed?\n')
 
 def show(*args):
     try:
