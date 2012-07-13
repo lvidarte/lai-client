@@ -56,11 +56,11 @@ def clip(*args):
     except ClientException as e:
         sys.stdout.write(str(e) + '\n')
     if doc.data:
-        try:
-            import pyperclip
+        import pyperclip
+        if pyperclip.copy is not None:
             pyperclip.copy(doc.data)
             print doc.data
-        except TypeError:
+        else:
             sys.stdout.write('Can\'t copy the content to the clipboard. Do you have xclip installed?\n')
 
 def show(*args):
