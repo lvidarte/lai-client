@@ -1,5 +1,18 @@
 #!/bin/bash
-source bin/config.sh
-source $ENV_DIR/bin/activate
-python lai/app.py "$@"
+
+# Put here the absolute path to lai module
+LAIPATH=/home/xleo/src/lvidarte/lai/client
+
+# Virtualenv
+# **********
+# Don't forget to add the PYTHONPATH with the absolute path to lai module
+# at the end of env/bin/activate:
+# export PYTHONPATH=/home/xleo/src/lvidarte/lai/client
+source $LAIPATH/env/bin/activate
+
+python $LAIPATH/lai/app.py "$@"
 deactivate
+
+# Then if you have ~/bin in your $PATH,
+# make a symbolic link to this file:
+# ln -s /home/xleo/src/lvidarte/lai/client/bin/lai ~/bin
