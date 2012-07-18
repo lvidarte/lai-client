@@ -8,9 +8,15 @@
 
 
 # Put here the absolute path to lai module
-#LAIPATH=/home/xleo/src/lvidarte/lai/client
+# examples:
+#LAIPATH=/home/mariano/projects/lai/client
+#ENVPATH=/home/mariano/virtualenvs/lai
 LAIPATH=
+ENVPATH=
 
+# If you lai and enviroment directory are the same
+# uncomment the line below
+#export ENVPATH=$LAIPATH
 
 if [ -z "$LAIPATH" ]
 then
@@ -20,7 +26,7 @@ else
     export PYTHONPATH=$LAIPATH
 
     # Activate virtualenv
-    source $LAIPATH/env/bin/activate
+    source $ENVPATH/bin/activate
 
     # Run the app
     python $LAIPATH/lai/app.py "$@"
