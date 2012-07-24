@@ -1,14 +1,15 @@
 SERVER = "http://localhost:8888"
-USER = "alfredormz"
-GITHUB_USER = "alfredormz"
-GITHUB_PASSWORD = "********"
+USER = "lvidarte@gmail.com"
+KEY_NAME = "howl"
+#GITHUB_USER = "alfredormz"
+#GITHUB_PASSWORD = "********"
 
 DATABASE1 = {
     'ENGINE': 'mongo',
     'HOST'  : 'localhost',
     'PORT'  : 27017,
-    'NAME'  : 'lai',
-    'TABLE' : '%s_%s' % (USER, 'client2'),
+    'NAME'  : 'lai_dev',
+    'TABLE' : '%s_%s' % (USER, 'client'),
 }
 
 DATABASE2 = {
@@ -17,5 +18,5 @@ DATABASE2 = {
     'TABLE' : '%s_%s' % (USER, 'client1'),
 }
 
-DATABASE = DATABASE2
+DATABASE = DATABASE1
 

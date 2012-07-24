@@ -57,7 +57,7 @@ class DBMongo(DBBase):
             doc = Document(**dfc)
             docs.append(doc)
         return docs
-       
+
     def get(self, id):
         try:
             spec = {'id': int(id)}
@@ -82,9 +82,9 @@ class DBMongo(DBBase):
         else:
             return self.insert(doc)
 
-    def insert(self, doc, synched=False):
+    def insert(self, doc, synced=False):
         doc.id = self.get_next_id()
-        doc.synched = synched
+        doc.synced = synced
         try:
             self.collection.insert(doc.to_dict())
         except Exception as e:
@@ -95,23 +95,23 @@ class DBMongo(DBBase):
         if type is None:
             pk = 'id'
             id = doc.id
-            doc.synched = False
+            doc.synced = False
             doc_ = doc.to_dict()
         elif type == UPDATE_RESPONSE:
             if self.collection.find({'sid': doc.sid}).count() == 0:
-                return self.insert(doc, synched=True)
+                return self.insert(doc, synced=True)
             if config.USER in doc.usersdel:
                 doc.data = None
                 doc.keys = None
             pk = 'sid'
             id = doc.sid
-            doc.synched = True
+            doc.synced = True
             doc_ = doc.to_dict()
         elif type == COMMIT_RESPONSE:
             pk = 'id'
             id = doc.id
-            doc.synched = True
-            doc_ = {'sid': doc.sid, 'tid': doc.tid, 'synched': doc.synched}
+            doc.synced = True
+            doc_ = {'sid': doc.sid, 'tid': doc.tid, 'synced': doc.synced}
             if config.USER in doc.usersdel:
                 doc_.update(data=None, keys=None)
         else:
@@ -132,7 +132,7 @@ class DBMongo(DBBase):
 
     def get_docs_for_commit(self):
         try:
-            spec = {'synched': False}
+            spec = {'synced': False}
             fields = {'_id': 0}
             cur = self.collection.find(spec, fields)
         except Exception as e:

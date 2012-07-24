@@ -5,7 +5,7 @@ import urllib2
 import json
 
 from lai import config
-from lai.gist import Gist, GistException
+#from lai.gist import Gist, GistException
 from lai.document import Document
 from lai.database import DatabaseException, UPDATE_RESPONSE, COMMIT_RESPONSE
 
@@ -22,6 +22,9 @@ class Client:
             self.db.connect()
         except DatabaseException as e:
             raise ClientException(e)
+
+    def sync(self):
+        pass
 
     def update(self):
         try:
@@ -71,14 +74,11 @@ class Client:
             raise ClientException(e)
 
     def save(self, doc):
-        if doc.keys is None:
-            doc.set_keys()
         try:
             doc = self.db.save(doc)
         except DatabaseException as e:
             raise ClientException(e)
-        else:
-            return doc
+        return doc
 
     def delete(self, doc):
         try:
@@ -92,10 +92,10 @@ class Client:
         except DatabaseException as e:
             raise ClientException(e)
 
-    def status(self):
-        try:
-            return self.db.status()
-        except DatabaseException as e:
+#   def status(self):
+#       try:
+#           return self.db.status()
+#       except DatabaseException as e:
             raise ClientException(e)
 
     def fetch(self, docs=None):
@@ -112,12 +112,12 @@ class Client:
         tid = self.db.get_last_tid()
         return "%s/%s/%s" % (config.SERVER, config.USER, tid)
 
-    def send_to_gist(self, doc):
-        try:
-            g = Gist(config.GITHUB_USER, config.GITHUB_PASSWORD)
-            return g.create(True, doc)
-        except GistException as e:
-            raise ClientException(e)
+#   def send_to_gist(self, doc):
+#       try:
+#           g = Gist(config.GITHUB_USER, config.GITHUB_PASSWORD)
+#           return g.create(True, doc)
+#       except GistException as e:
+#           raise ClientException(e)
 
 if __name__ == '__main__':
     from lai.database import Database
