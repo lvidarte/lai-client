@@ -17,65 +17,62 @@ def add(*args):
     try:
         data = args[0]
     except IndexError:
-        sys.stdout.write('Argument TEXT required\n')
+        sys.stderr.write('Argument TEXT required\n')
         return None
     doc = Document(data)
-    if len(args) == 2:
-        doc.set_keys(args[1])
     try:
         doc = client.save(doc)
     except ClientException as e:
-        sys.stdout.write(str(e) + '\n')
+        sys.stderr.write(str(e) + '\n')
 
 def get(*args):
     try:
         id = args[0]
     except IndexError:
-        sys.stdout.write('Argument ID required\n')
+        sys.stderr.write('Argument ID required\n')
         return None
     try:
         doc = client.get(id)
     except ClientException as e:
-        sys.stdout.write(str(e) + '\n')
+        sys.stderr.write(str(e) + '\n')
     if doc.data:
-        print doc.data
+        print doc.data['body']
 
 def getall(*args):
     docs = client.getall()
     for doc in docs:
-        print "%d: %s" % (doc.id, doc.data)
+        print "%d: %s" % (doc.id, doc.data['body'])
 
 def clip(*args):
     try:
         id = args[0]
     except IndexError:
-        sys.stdout.write('Argument ID required\n')
+        sys.stderr.write('Argument ID required\n')
         return None
     try:
         doc = client.get(id)
     except ClientException as e:
-        sys.stdout.write(str(e) + '\n')
+        sys.stderr.write(str(e) + '\n')
     if doc.data:
         import pyperclip
         if pyperclip.copy is not None:
             pyperclip.copy(doc.data)
             print doc.data
         else:
-            sys.stdout.write('Can\'t copy the content to the clipboard. Do you have xclip installed?\n')
+            sys.stderr.write('Can\'t copy the content to the clipboard. Do you have xclip installed?\n')
 
 def show(*args):
     try:
         id = args[0]
     except IndexError:
-        sys.stdout.write('Argument ID required\n')
+        sys.stderr.write('Argument ID required\n')
         return None
     try:
         doc = client.get(id)
     except ClientException as e:
-        sys.stdout.write(str(e) + '\n')
+        sys.stderr.write(str(e) + '\n')
     if doc:
-        for key in ('id', 'sid', 'tid', 'synched',
-                    'users', 'usersdel', 'keys', 'data'):
+        for key in ('id', 'sid', 'tid', 'public', 'synced', 'data'):
             value = getattr(doc, key)
             if type(value) == list:
                 value = ','.join(value)
@@ -86,68 +83,53 @@ def edit(*args):
         id = args[0]
         data = args[1]
     except IndexError:
-        sys.stdout.write('Arguments ID and NEW_TEXT required\n')
+        sys.stderr.write('Arguments ID and NEW_TEXT required\n')
         return None
     doc = client.get(id)
     doc.data = data
     try:
         doc = client.save(doc)
     except ClientException as e:
-        sys.stdout.write(str(e) + '\n')
+        sys.stderr.write(str(e) + '\n')
 
 def delete(*args):
     try:
         doc = client.get(args[0])
     except IndexError:
-        sys.stdout.write('Argument ID required\n')
+        sys.stderr.write('Argument ID required\n')
     try:
         doc = client.delete(doc)
     except ClientException as e:
-        sys.stdout.write(str(e) + '\n')
+        sys.stderr.write(str(e) + '\n')
 
 def search(q):
     try:
         rs = client.search(q)
     except ClientException as e:
-        sys.stdout.write(str(e) + '\n')
+        sys.stderr.write(str(e) + '\n')
     if rs:
         for doc in rs:
             if colored:
-                tokens = doc.data.rsplit('#')
+                tokens = doc.data['body'].rsplit('#')
                 s  = colored.blue(str(doc.id) + ': ')
                 s += tokens[0].strip().encode('utf8')
                 if len(tokens) == 2:
                     s += colored.green(' #' + tokens[1].encode('utf8'))
                 print s
             else:
-                print "%s: %s" % (doc.id, doc.data.encode('utf8'))
+                print "%s: %s" % (doc.id, doc.data['body'].encode('utf8'))
 
-def update(*args):
+def sync(*args):
     try:
-        rs = client.update()
-        if rs is None:
-            print "Nothing to update"
-        else:
-            print "Updated %d documents" % rs
+        client.sync()
     except ClientException as e:
-        sys.stdout.write(str(e) + '\n')
-
-def commit(*args):
-    try:
-        rs = client.commit()
-        if rs is None:
-            print "Nothing to commit"
-        else:
-            print "Commited %d documents" % rs
-    except ClientException as e:
-        sys.stdout.write(str(e) + '\n')
+        sys.stderr.write(str(e) + '\n')
 
 def editor(*args):
     editor_cmd = os.getenv('EDITOR')
-    keys_line = '------------- enter keywords before this line -------------'
 
     if editor_cmd is None:
-        sys.stdout.write("Environment var EDITOR is unset\n")
+        sys.stderr.write("Environment var EDITOR is unset\n")
         return None
 
     if len(args):
@@ -158,86 +140,51 @@ def editor(*args):
     (_, filename) = tempfile.mkstemp()
 
     with codecs.open(filename, 'w', encoding='utf8') as file:
-        data = doc.data or ''
-        keys = doc.keys or ''
-        file.write("%s\n%s\n%s" % (data, keys_line, keys))
+        data = "" if doc.data is None else doc.data['body']
+        file.write(data)
 
-    rs = None
     if os.system(editor_cmd + " " + filename) == 0:
         with codecs.open(filename, 'r', encoding='utf8') as file:
-            lines = file.read().splitlines()
-            end_data = None
-            if keys_line in lines:
-                end_data = lines.index(keys_line)
-                if len(lines) > end_data + 1:
-                    doc.set_keys('\n'.join(lines[end_data + 1:]))
-            if end_data is not None:
-                lines = lines[:end_data]
-            doc.data = '\n'.join(lines).strip()
-            if doc.data:
-                rs = client.save(doc)
+            data = file.read().strip()
+            if data == '':
+                data = None
+            doc.data = data
+            if doc.data or doc.id:
+                client.save(doc)
 
     os.unlink(filename)
-    return rs
 
 def status(*args):
     try:
         docs = client.status()
     except ClientException as e:
-        sys.stdout.write(str(e) + '\n')
+        sys.stderr.write(str(e) + '\n')
     for doc in docs:
         if doc.data is None:
             data = "[DELETED]"
         else:
-            data = doc.data
-        print "%d: %s" % (doc.id, data[:70])
-
-def adduser(*args):
-    try:
-        return _set_user('add', *args)
-    except (IndexError, TypeError):
-        sys.stdout.write('Arguments ID and USER required\n')
-
-def deluser(*args):
-    try:
-        return _set_user('del', *args)
-    except (IndexError, TypeError):
-        sys.stdout.write('Arguments ID and USER required\n')
+            data = doc.data['body'][:70]
+        print "%d: %s" % (doc.id, data)
 
 def send_to_gist(*args):
     try:
         id = args[0]
     except IndexError:
-        sys.stdout.write('Argument ID required\n')
+        sys.stderr.write('Argument ID required\n')
         return None
     try:
         doc = client.get(id)
         html_url = client.send_to_gist(doc)
-        sys.stdout.write(html_url + '\n')
+        sys.stderr.write(html_url + '\n')
 
     except ClientException as e:
-        sys.stdout.write(str(e) + '\n')
-
-def _set_user(action, id, user):
-    doc = client.get(id)
-    if action == 'add':
-        rs = doc.add_user(user)
-    elif action == 'del':
-        rs = doc.del_user(user)
-    if rs == True:
-        try:
-            doc = client.save(doc)
-        except ClientException as e:
-            sys.stdout.write(str(e) + '\n')
-    else:
-        sys.stdout.write('Can\'t %s user\n' % action)
+        sys.stderr.write(str(e) + '\n')
 
 def print_short_help():
     out  = "Usage: lai WORD\n"
-    out += "       lai [--update | --commit | --status]\n"
+    out += "       lai [--sync | --status]\n"
     out += "       lai [--add TEXT | --edit ID NEW_TEXT | --editor [ID]]\n"
     out += "       lai [--get ID | --clip ID | --show ID | --del ID | --getall]\n"
-    out += "       lai [--adduser ID USER | --deluser ID USER]\n"
     out += "       lai [--gist ID]\n"
     out += "       lai [--help]"
     print out
@@ -253,11 +200,8 @@ def print_long_help():
     out += "       lai --show ID             Show all metadata from a specific doc\n"
     out += "       lai --del ID              Delete doc\n"
     out += "       lai --gist ID             Send doc to Github Gist\n"
-    out += "       lai --update              Update changes from server\n"
-    out += "       lai --commit              Commit changes to server\n"
-    out += "       lai --status              Show actual status\n"
-    out += "       lai --adduser ID USER     Add user to doc\n"
-    out += "       lai --deluser ID USER     Del user from doc"
+    out += "       lai --sync                Sync changes with server\n"
+    out += "       lai --status              Show actual status"
     print out
 
 
@@ -275,12 +219,9 @@ if __name__ == '__main__':
             '--add'    : add,
             '--edit'   : edit,
             '--del'    : delete,
-            '--commit' : commit,
-            '--update' : update,
+            '--sync'   : sync,
             '--editor' : editor,
             '--status' : status,
-            '--adduser': adduser,
-            '--deluser': deluser,
             '--gist'   : send_to_gist,
             '--help'   : print_long_help,
         }

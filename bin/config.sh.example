@@ -1,5 +1,0 @@
-ENV_DIR=/home/xleo/src/lvidarte/lai/env
-
-# PYTHONPATH
-# uncomment the line below or put it at the end of env/bin/activate script ;)
-#export PYTHONPATH=/home/xleo/src/lvidarte/lai/client

@@ -6,30 +6,23 @@
 # make a symbolic link to this file:
 # ln -s /home/xleo/src/lvidarte/lai/client/bin/lai ~/bin
 
+#LAI_CLI_ENV_PATH=
+#LAI_CLI_MODULE_PATH=
 
-# Put here the absolute path to lai module
-# examples:
-#LAIPATH=/home/mariano/projects/lai/client
-#ENVPATH=/home/mariano/virtualenvs/lai
-LAIPATH=
-ENVPATH=
-
-# If you lai and enviroment directory are the same
-# uncomment the line below
-#export ENVPATH=$LAIPATH
-
-if [ -z "$LAIPATH" ]
+if [ -z "$LAI_CLI_MODULE_PATH" ] || [ -z "$LAI_CLI_ENV_PATH" ]
 then
-    echo "You need to set up the LAIPATH variable with the absolute path to lai module."
+    echo "You need to set up the LAI_CLI_ENV_PATH and LAI_CLI_MODULE_PATH"
+    echo "environment vars with the absolute path to lai virtualenv dir and"
+    echo "the lai module dir respec."
 else
     # Export path for virtualenv
-    export PYTHONPATH=$LAIPATH
+    export PYTHONPATH=$LAI_CLI_MODULE_PATH
 
     # Activate virtualenv
-    source $ENVPATH/bin/activate
+    source $LAI_CLI_ENV_PATH/bin/activate
 
     # Run the app
-    python $LAIPATH/lai/app.py "$@"
+    python $LAI_CLI_MODULE_PATH/lai/app.py "$@"
 
     # Finally..
     deactivate

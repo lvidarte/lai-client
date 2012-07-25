@@ -39,7 +39,7 @@ class DBMongo(DBBase):
 
     def search(self, regex):
         try:
-            spec = {'data.body': {'$regex': regex}}
+            spec = {'data.body': {'$regex': regex, '$options': 'im'}}
             fields = {'_id': 0}
             cur = self.collection.find(spec, fields)
         except Exception as e:
