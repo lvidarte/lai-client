@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
-
 import pymongo
 from pymongo.errors import AutoReconnect
-from lai import config
 from lai.db.base import DBBase
-from lai.database import DatabaseException, UPDATE_RESPONSE, COMMIT_RESPONSE
+from lai.database import DatabaseException, UPDATE_PROCESS, COMMIT_PROCESS
 from lai import Document
 
 
@@ -34,16 +31,15 @@ class DBMongo(DBBase):
         try:
             query = {'_id': self.config['TABLE']}
             update = {'$inc': {'last_id': 1}}
-            collection = self.db['counter']
-            row = collection.find_and_modify(query, update,
-                                             upsert=True, new=True)
+            coll = self.db['counter']
+            row = coll.find_and_modify(query, update, upsert=True, new=True)
         except Exception as e:
             DatabaseException(e)
         return row['last_id']
 
     def search(self, regex):
         try:
-            spec = {'keys': {'$regex': regex}}
+            spec = {'data.body': {'$regex': regex}}
             fields = {'_id': 0}
             cur = self.collection.find(spec, fields)
         except Exception as e:
@@ -67,11 +63,12 @@ class DBMongo(DBBase):
             DatabaseException(e)
         if row:
             return Document(**row)
-        return None
+        raise DatabaseException('Document not found')
 
     def getall(self):
         try:
-            cur = self.collection.find({}, {'_id': 0})
+            fields = {'_id': 0}
+            cur = self.collection.find({}, fields, sort=[('tid', 1)])
         except Exception as e:
             DatabaseException(e)
         return [Document(**row) for row in cur]
@@ -97,23 +94,18 @@ class DBMongo(DBBase):
             id = doc.id
             doc.synced = False
             doc_ = doc.to_dict()
-        elif type == UPDATE_RESPONSE:
+        elif type == UPDATE_PROCESS:
             if self.collection.find({'sid': doc.sid}).count() == 0:
                 return self.insert(doc, synced=True)
-            if config.USER in doc.usersdel:
-                doc.data = None
-                doc.keys = None
             pk = 'sid'
             id = doc.sid
             doc.synced = True
             doc_ = doc.to_dict()
-        elif type == COMMIT_RESPONSE:
+        elif type == COMMIT_PROCESS:
             pk = 'id'
             id = doc.id
             doc.synced = True
             doc_ = {'sid': doc.sid, 'tid': doc.tid, 'synced': doc.synced}
-            if config.USER in doc.usersdel:
-                doc_.update(data=None, keys=None)
         else:
             raise DatabaseException('incorrect type')
 
@@ -126,8 +118,13 @@ class DBMongo(DBBase):
             return doc
 
     def delete(self, doc):
+        if doc.id is None:
+            raise DatabaseException('Document does not have id')
+        if doc.sid is None:
+            self.collection.remove({'id': doc.id})
+            return None
         doc.data = None
-        doc.keys = None
+        doc.synced = False
         return self.update(doc)
 
     def get_docs_for_commit(self):

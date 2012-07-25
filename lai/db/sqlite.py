@@ -2,7 +2,7 @@
 
 import sqlite3 as sqlite
 from lai.db.base import DBBase
-from lai.database import DatabaseException, UPDATE_RESPONSE, COMMIT_RESPONSE
+from lai.database import DatabaseException, UPDATE_PROCESS, COMMIT_PROCESS
 from lai import Document
 
 class DBSqlite(DBBase):
@@ -54,12 +54,12 @@ class DBSqlite(DBBase):
 
     def update(self, doc, type=None):
 
-        if type is None or type == UPDATE_RESPONSE:
+        if type is None or type == UPDATE_PROCESS:
             id = self._exists('sid', doc.sid)
             doc.id = id
-            synched = True if type == UPDATE_RESPONSE else False
+            synched = True if type == UPDATE_PROCESS else False
             self.save(doc, synched)
-        elif COMMIT_RESPONSE:
+        elif COMMIT_PROCESS:
             self._update_transaction(doc, synched=True)
 
     def get(self, id):

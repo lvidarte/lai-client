@@ -1,18 +1,26 @@
-# -*- coding: utf-8 -*-
-
-from lai import config
 
 
-class Document:
+class Document(object):
 
-    VALID_ATTRS = ('id', 'sid', 'tid', 'user',
-                   'public', 'synced', 'data')
+    VALID_ATTRS = ('id', 'sid', 'tid', 'public', 'synced', 'data')
 
     def __init__(self, data=None, id=None, sid=None, tid=None,
-                 user=None, public=False, synced=False):
-        if user is None:
-            user = config.USER
+                 public=False, synced=False):
+        self._data = None
         self.from_dict(locals())
+
+    def get_data(self):
+        return self._data
+
+    def set_data(self, value):
+        if type(value) != dict:
+            value = {'body': value}
+        self._data = value
+
+    def del_data(self):
+        self._data = None
+
+    data = property(get_data, set_data, del_data)
 
     def from_dict(self, mapping):
         for key, value in mapping.items():
@@ -20,15 +28,14 @@ class Document:
                 setattr(self, key, value)
 
     def to_dict(self):
-        doc = {}
+        doc = {'data': self._data}
         for key, value in self.__dict__.items():
             if key in self.VALID_ATTRS:
                 doc[key] = value
         return doc
 
     def __repr__(self):
-        return ', '.join(["%s=%s" % (key, self.__dict__[key])
-                          for key in self.VALID_ATTRS])
+        return str(self.to_dict())
 
 
 if __name__ == '__main__':

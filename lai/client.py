@@ -1,13 +1,20 @@
-# -*- coding: utf-8 -*-
-
+import os.path
 import urllib
 import urllib2
 import json
+import base64
 
 from lai import config
-#from lai.gist import Gist, GistException
 from lai.document import Document
-from lai.database import DatabaseException, UPDATE_RESPONSE, COMMIT_RESPONSE
+from lai.database import DatabaseException, UPDATE_PROCESS, COMMIT_PROCESS
+from lai.lib import crypto
+#from lai.lib import gist
+
+
+PUB_KEY_FILE = os.path.join(os.path.expanduser('~'), ".ssh/id_rsa.pub")
+PUB_KEY = open(PUB_KEY_FILE).read()
+PRV_KEY_FILE = os.path.join(os.path.expanduser('~'), ".ssh/id_rsa")
+PRV_KEY = open(PRV_KEY_FILE).read()
 
 
 class ClientException(Exception):
@@ -24,42 +31,36 @@ class Client:
             raise ClientException(e)
 
     def sync(self):
-        pass
+        # Update
+        request = self._get_request_base_doc()
+        request['process'] = UPDATE_PROCESS
+        response = self._send(request)
+        self._update(response)
+        # Commit
+        request = self._get_request_base_doc()
+        request['session_id'] = response['session_id']
+        request['process'] = COMMIT_PROCESS
+        request['docs'] = self.db.get_docs_for_commit()
+        if len(request['docs']):
+            response = self._send(request)
+            self._update(response)
 
-    def update(self):
-        try:
-            data = self.fetch()
-        except urllib2.URLError as e:
-            raise ClientException(e)
-        if len(data['docs']):
-            for doc_ in data['docs']:
-                doc = Document(**doc_)
+    def _update(self, response):
+        if len(response['docs']):
+            for doc_ in response['docs']:
                 try: 
-                    self.db.update(doc, type=UPDATE_RESPONSE)
+                    doc = Document(**doc_)
+                    self.db.update(doc, type=response['process'])
                 except DatabaseException as e:
                     raise ClientException(e)
-            return len(data['docs'])
 
-    def commit(self):
-        try:
-            docs = self.db.get_docs_for_commit()
-        except DatabaseException as e:
-            raise ClientException(e)
-        if len(docs):
-            try:
-                data = self.fetch(docs)
-            except urllib2.URLError as e:
-                raise ClientException(e)
-            if 'error' in data:
-                raise ClientException(data['error'])
-            else:
-                for doc_ in data['docs']:
-                    try:
-                        doc = Document(**doc_)
-                        self.db.update(doc, type=COMMIT_RESPONSE)
-                    except DatabaseException as e:
-                        raise ClientException(e)
-                return len(data['docs'])
+    def _get_request_base_doc(self):
+        return {'user'      : config.USER,
+                'key_name'  : config.KEY_NAME,
+                'session_id': None,
+                'process'   : None,
+                'last_tid'  : self.db.get_last_tid(),
+                'docs'      : []}
 
     def get(self, id):
         try:
@@ -75,10 +76,9 @@ class Client:
 
     def save(self, doc):
         try:
-            doc = self.db.save(doc)
+            return self.db.save(doc)
         except DatabaseException as e:
             raise ClientException(e)
-        return doc
 
     def delete(self, doc):
         try:
@@ -92,31 +92,45 @@ class Client:
         except DatabaseException as e:
             raise ClientException(e)
 
-#   def status(self):
-#       try:
-#           return self.db.status()
-#       except DatabaseException as e:
+    def status(self):
+        try:
+            return self.db.status()
+        except DatabaseException as e:
             raise ClientException(e)
 
-    def fetch(self, docs=None):
-        url = self.get_request_url()
-        if docs is not None:
-            data = urllib.urlencode({'docs': json.dumps(docs)})
+    def _send(self, request):
+        msg  = json.dumps(request)
+        enc  = crypto.encrypt(msg, PUB_KEY)
+        data = base64.b64encode(enc)
+        try:
+            url = self._get_url(request)
+            data = self.fetch(url, data)
+        except urllib2.URLError as e:
+            raise ClientException(e)
+        enc = base64.b64decode(data)
+        msg = crypto.decrypt(enc, PRV_KEY)
+        response = json.loads(msg)
+        return response
+
+    def _get_url(self, request):
+        args = (config.SERVER, request['user'], request['process'])
+        url = '%s/sync?user=%s&process=%s' % args
+        return url
+
+    def fetch(self, url, data=None):
+        if data is not None:
+            data = urllib.urlencode({'data': data})
             req = urllib2.Request(url, data)
         else:
             req = url
         res = urllib2.urlopen(req)
-        return json.loads(res.read())
-
-    def get_request_url(self):
-        tid = self.db.get_last_tid()
-        return "%s/%s/%s" % (config.SERVER, config.USER, tid)
+        return res.read()
 
 #   def send_to_gist(self, doc):
 #       try:
-#           g = Gist(config.GITHUB_USER, config.GITHUB_PASSWORD)
+#           g = gist.Gist(config.GITHUB_USER, config.GITHUB_PASSWORD)
 #           return g.create(True, doc)
-#       except GistException as e:
+#       except gist.GistException as e:
 #           raise ClientException(e)
 
 if __name__ == '__main__':

@@ -9,7 +9,7 @@ DATABASE1 = {
     'HOST'  : 'localhost',
     'PORT'  : 27017,
     'NAME'  : 'lai_dev',
-    'TABLE' : '%s_%s' % (USER, 'client'),
+    'TABLE' : '%s_%s' % ('xleo', 'client'),
 }
 
 DATABASE2 = {

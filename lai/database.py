@@ -1,13 +1,13 @@
-# -*- coding: utf-8 -*-
-
 from lai.config import DATABASE
 
 
-UPDATE_RESPONSE = 1
-COMMIT_RESPONSE = 2
+UPDATE_PROCESS = 'update'
+COMMIT_PROCESS = 'commit'
+
 
 class DatabaseException(Exception):
     pass
+
 
 class Database(object):
     """Factory"""
