@@ -1,3 +1,18 @@
+# -*- coding: utf-8 -*-
+
+# This file is part of lai-client.
+#
+# lai-client is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3
+# as published by the Free Software Foundation.
+#
+# lai-client is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with lai-client. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import sys
@@ -182,7 +197,7 @@ def print_short_help():
     out += "       lai [--add TEXT | --edit ID NEW_TEXT | --editor [ID]]\n"
     out += "       lai [--get ID | --clip ID | --show ID | --del ID | --getall]\n"
     out += "       lai [--gist ID]\n"
-    out += "       lai [--help]"
+    out += "       lai [--help | --version]"
     print out
 
 def print_long_help():
@@ -197,8 +212,14 @@ def print_long_help():
     out += "       lai --del ID              Delete doc\n"
     out += "       lai --gist ID             Send doc to Github Gist\n"
     out += "       lai --sync                Sync changes with server\n"
-    out += "       lai --status              Show docs to sync"
+    out += "       lai --status              Show docs to sync\n"
+    out += "       lai --help                Show this help\n"
+    out += "       lai --version             Show program version"
     print out
+
+def print_version():
+    from lai import version
+    print "lai-client", version
 
 
 if __name__ == '__main__':
@@ -220,6 +241,7 @@ if __name__ == '__main__':
             '--status' : status,
             '--gist'   : send_to_gist,
             '--help'   : print_long_help,
+            '--version': print_version,
         }
 
         if len(sys.argv) > 1:

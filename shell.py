@@ -1,14 +1,18 @@
 #!bin/python -i
 
-# Add auto-completion and a stored history file of commands to your Python
-# interactive interpreter. Requires Python 2.0+, readline. Autocomplete is
-# bound to the Esc key by default (you can change it - see readline docs).
+# This file is part of lai-client.
 #
-# Store the file in ~/.pystartup, and set an environment variable to point
-# to it:  "export PYTHONSTARTUP=/home/user/.pystartup" in bash.
+# lai-client is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3
+# as published by the Free Software Foundation.
 #
-# Note that PYTHONSTARTUP does *not* expand "~", so you have to put in the
-# full path to your home directory.
+# lai-client is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with lai-client. If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 import atexit
@@ -36,7 +40,6 @@ atexit.register(save_history)
 del os, atexit, readline, rlcompleter, save_history, historyPath
 
 
-# lai
 database = Database()
 client = Client(database)
 
