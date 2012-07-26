@@ -10,14 +10,15 @@
 # Note that PYTHONSTARTUP does *not* expand "~", so you have to put in the
 # full path to your home directory.
 
+import sys
 import atexit
 import os
 import readline
 import rlcompleter
 
 from pprint import pprint as pp
+from lai import config, Client, Database, Document
 
-from lai import Client, Database, Document
 
 historyPath = os.path.expanduser("~/.pyhistory")
 
@@ -34,11 +35,10 @@ if os.path.exists(historyPath):
 atexit.register(save_history)
 del os, atexit, readline, rlcompleter, save_history, historyPath
 
+
 # lai
 database = Database()
 client = Client(database)
 
-def save_docs(total, message):
-    for i in range(total):
-        doc = Document(message.format(i))
-        client.save(doc)
+print "Python", sys.version.split('\n')[0]
+print "Welcome to lai shell"
