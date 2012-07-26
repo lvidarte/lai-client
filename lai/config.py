@@ -17,15 +17,15 @@
 SERVER = "http://localhost:8888"
 USER = "lvidarte@gmail.com"
 KEY_NAME = "howl"
-#GITHUB_USER = "alfredormz"
+#GITHUB_USER = "lvidarte"
 #GITHUB_PASSWORD = "********"
 
 DATABASE1 = {
     'ENGINE': 'mongo',
     'HOST'  : 'localhost',
     'PORT'  : 27017,
-    'NAME'  : 'lai_dev',
-    'TABLE' : '%s_%s' % ('xleo', 'client'),
+    'NAME'  : 'lai_cli_dev',
+    'TABLE' : 'docs',
 }
 
 DATABASE2 = {

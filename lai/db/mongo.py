@@ -44,14 +44,14 @@ class DBMongo(DBBase):
         return 0
 
     def get_next_id(self):
+        coll = self.db['internal']
         try:
-            query = {'_id': self.config['TABLE']}
-            update = {'$inc': {'last_id': 1}}
-            coll = self.db['counter']
+            query = {'_id': 'last_id'}
+            update = {'$inc': {'id': 1}}
             row = coll.find_and_modify(query, update, upsert=True, new=True)
         except Exception as e:
             DatabaseException(e)
-        return row['last_id']
+        return row['id']
 
     def search(self, regex):
         try:
@@ -63,11 +63,24 @@ class DBMongo(DBBase):
         return [Document(**row) for row in cur]
 
     def status(self):
-        docs = []
-        dfcs =  self.get_docs_for_commit()
-        for dfc in dfcs:
-            doc = Document(**dfc)
-            docs.append(doc)
+        docs = {'updated'  : [],
+                'committed': [],
+                'to_commit': []}
+
+        row = self.db.internal.find_one({'_id': 'last_sync'})
+
+        if row and 'update' in row:
+            for id in row['update']:
+                docs['updated'].append(self.get(id))
+
+        if row and 'commit' in row:
+            for id in row['commit']:
+                docs['committed'].append(self.get(id))
+
+        to_commit =  self.get_docs_to_commit()
+        for row in to_commit:
+            doc = Document(**row)
+            docs['to_commit'].append(doc)
         return docs
 
     def get(self, id):
@@ -145,14 +158,24 @@ class DBMongo(DBBase):
         doc.synced = False
         return self.update(doc)
 
-    def get_docs_for_commit(self):
+    def save_last_sync(self, process, ids):
+        if len(ids):
+            coll = self.db['internal']
+            try:
+                spec = {'_id': 'last_sync'}
+                document = {'$set': {process: ids}}
+                coll.update(spec, document, upsert=True)
+            except Exception as e:
+                DatabaseException(e)
+
+    def get_docs_to_commit(self):
         try:
             spec = {'synced': False}
             fields = {'_id': 0}
             cur = self.collection.find(spec, fields)
         except Exception as e:
             DatabaseException(e)
-        return [row for row in cur]
+        return list(cur)
 
     def __str__(self):
         return "%s://%s:%s/%s?%s" % (self.config['ENGINE'],

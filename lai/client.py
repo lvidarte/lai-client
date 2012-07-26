@@ -51,24 +51,30 @@ class Client:
         request = self._get_request_base_doc()
         request['process'] = UPDATE_PROCESS
         response = self._send(request)
-        self._update(response)
+        ids = self._update(response)
+        self.db.save_last_sync(UPDATE_PROCESS, ids)
         # Commit
         request = self._get_request_base_doc()
         request['session_id'] = response['session_id']
         request['process'] = COMMIT_PROCESS
-        request['docs'] = self.db.get_docs_for_commit()
+        request['docs'] = self.db.get_docs_to_commit()
+        ids = []
         if len(request['docs']):
             response = self._send(request)
-            self._update(response)
+            ids = self._update(response)
+        self.db.save_last_sync(COMMIT_PROCESS, ids)
 
     def _update(self, response):
+        ids = []
         if len(response['docs']):
             for doc_ in response['docs']:
                 try: 
                     doc = Document(**doc_)
-                    self.db.update(doc, type=response['process'])
+                    doc = self.db.update(doc, type=response['process'])
+                    ids.append(doc.id)
                 except DatabaseException as e:
                     raise ClientException(e)
+        return ids
 
     def _get_request_base_doc(self):
         return {'user'      : config.USER,
