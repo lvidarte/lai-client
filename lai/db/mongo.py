@@ -67,8 +67,10 @@ class DBMongo(DBBase):
 
     def getall(self):
         try:
+            spec = {'data.body': {'$exists': 1}}
             fields = {'_id': 0}
-            cur = self.collection.find({}, fields, sort=[('tid', 1)])
+            sort = [('tid', 1)]
+            cur = self.collection.find(spec, fields, sort=sort)
         except Exception as e:
             DatabaseException(e)
         return [Document(**row) for row in cur]

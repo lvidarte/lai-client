@@ -13,7 +13,9 @@ class Document(object):
         return self._data
 
     def set_data(self, value):
-        if type(value) != dict:
+        if isinstance(value, (str, unicode)) and value.strip() == '':
+            value = None
+        if type(value) != dict and value is not None:
             value = {'body': value}
         self._data = value
 

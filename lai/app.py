@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 import os
 import sys
@@ -145,10 +144,7 @@ def editor(*args):
 
     if os.system(editor_cmd + " " + filename) == 0:
         with codecs.open(filename, 'r', encoding='utf8') as file:
-            data = file.read().strip()
-            if data == '':
-                data = None
-            doc.data = data
+            doc.data = file.read().strip()
             if doc.data or doc.id:
                 client.save(doc)
 
@@ -181,7 +177,7 @@ def send_to_gist(*args):
         sys.stderr.write(str(e) + '\n')
 
 def print_short_help():
-    out  = "Usage: lai WORD\n"
+    out  = "Usage: lai REGEX\n"
     out += "       lai [--sync | --status]\n"
     out += "       lai [--add TEXT | --edit ID NEW_TEXT | --editor [ID]]\n"
     out += "       lai [--get ID | --clip ID | --show ID | --del ID | --getall]\n"
@@ -190,9 +186,9 @@ def print_short_help():
     print out
 
 def print_long_help():
-    out  = "Usage: lai WORD                  Performs a search\n"
+    out  = "Usage: lai REGEX                 Performs a regex search\n"
     out += "       lai --add TEXT            Add new doc\n"
-    out += "       lai --edit ID NEW_TEXT    Edit doc\n"
+    out += "       lai --edit ID NEW_TEXT    Edit inline a doc\n"
     out += "       lai --editor [ID]         Add or edit with default text editor\n"
     out += "       lai --get ID              Get a specific doc\n"
     out += "       lai --clip ID             Show and copy to clipboard a specific doc\n"
@@ -201,7 +197,7 @@ def print_long_help():
     out += "       lai --del ID              Delete doc\n"
     out += "       lai --gist ID             Send doc to Github Gist\n"
     out += "       lai --sync                Sync changes with server\n"
-    out += "       lai --status              Show actual status"
+    out += "       lai --status              Show docs to sync"
     print out
 
 
