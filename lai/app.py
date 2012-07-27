@@ -165,6 +165,25 @@ def editor(*args):
 
     os.unlink(filename)
 
+def set_public(*args):
+    _set('public', True, *args)
+
+def unset_public(*args):
+    _set('public', False, *args)
+
+def _set(key, value, *args):
+    try:
+        id = args[0]
+    except IndexError:
+        sys.stderr.write('Argument ID required\n')
+        return None
+    try:
+        doc = client.get(id)
+        setattr(doc, key, value)
+        client.save(doc)
+    except ClientException as e:
+        sys.stderr.write(str(e) + '\n')
+
 def status(*args):
     try:
         docs = client.status()
@@ -207,6 +226,7 @@ def print_short_help():
     out += "       lai [--sync | --status]\n"
     out += "       lai [--add TEXT | --edit ID NEW_TEXT | --editor [ID]]\n"
     out += "       lai [--get ID | --clip ID | --show ID | --del ID | --getall]\n"
+    out += "       lai [--set-public ID | --unset-public ID]\n"
     out += "       lai [--gist ID]\n"
     out += "       lai [--help | --version]"
     print out
@@ -219,11 +239,13 @@ def print_long_help():
     out += "       lai --get ID              Get a specific doc\n"
     out += "       lai --clip ID             Show and copy to clipboard a specific doc\n"
     out += "       lai --getall              Get all docs\n"
-    out += "       lai --show ID             Show all metadata from a specific doc\n"
     out += "       lai --del ID              Delete doc\n"
     out += "       lai --gist ID             Send doc to Github Gist\n"
-    out += "       lai --sync                Sync changes with server\n"
+    out += "       lai --set-public ID       Set public a doc\n"
+    out += "       lai --unset-public ID     Unset public a doc\n"
+    out += "       lai --show ID             Show all metadata from a specific doc\n"
     out += "       lai --status              Show docs to sync\n"
+    out += "       lai --sync                Sync changes with server\n"
     out += "       lai --help                Show this help\n"
     out += "       lai --version             Show program version"
     print out
@@ -240,19 +262,21 @@ if __name__ == '__main__':
         sys.stderr.write(str(e) + '\n')
     else:
         METHODS = {
-            '--get'    : get,
-            '--getall' : getall,
-            '--clip'   : clip,
-            '--show'   : show,
-            '--add'    : add,
-            '--edit'   : edit,
-            '--del'    : delete,
-            '--sync'   : sync,
-            '--editor' : editor,
-            '--status' : status,
-            '--gist'   : send_to_gist,
-            '--help'   : print_long_help,
-            '--version': print_version,
+            '--get'         : get,
+            '--getall'      : getall,
+            '--clip'        : clip,
+            '--show'        : show,
+            '--add'         : add,
+            '--edit'        : edit,
+            '--del'         : delete,
+            '--sync'        : sync,
+            '--editor'      : editor,
+            '--set-public'  : set_public,
+            '--unset-public': unset_public,
+            '--status'      : status,
+            '--gist'        : send_to_gist,
+            '--help'        : print_long_help,
+            '--version'     : print_version,
         }
 
         if len(sys.argv) > 1:
