@@ -170,12 +170,23 @@ def status(*args):
         docs = client.status()
     except ClientException as e:
         sys.stderr.write(str(e) + '\n')
-    for doc in docs:
-        if doc.data is None:
-            data = "[DELETED]"
+    def print_docs(docs):
+        if len(docs):
+            for doc in docs:
+                if doc.data is None:
+                    data = "[DELETED]"
+                else:
+                    data = doc.data['body']
+                print "{:>6}: {:.70}".format(doc.id, data)
         else:
-            data = doc.data['body'][:70]
-        print "%d: %s" % (doc.id, data)
+            print "None"
+    fmt = "{:-^80}"
+    print fmt.format('Updated')
+    print_docs(docs['updated'])
+    print fmt.format('Committed')
+    print_docs(docs['committed'])
+    print fmt.format('To commit')
+    print_docs(docs['to_commit'])
 
 def send_to_gist(*args):
     try:
