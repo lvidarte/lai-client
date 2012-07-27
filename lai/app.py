@@ -48,8 +48,8 @@ def get(*args):
     try:
         doc = client.get(id)
     except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
-    if doc.data:
+        pass
+    else:
         print doc.data['body']
 
 def getall(*args):
@@ -84,9 +84,9 @@ def show(*args):
     try:
         doc = client.get(id)
     except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
-    if doc:
-        for key in ('id', 'sid', 'tid', 'public', 'synced', 'data'):
+        pass
+    else:
+        for key in ('id', 'sid', 'tid', 'user', 'public', 'synced', 'data'):
             value = getattr(doc, key)
             if type(value) == list:
                 value = ','.join(value)
@@ -116,9 +116,9 @@ def delete(*args):
     except ClientException as e:
         sys.stderr.write(str(e) + '\n')
 
-def search(q):
+def search(regex):
     try:
-        rs = client.search(q)
+        rs = client.search(regex)
     except ClientException as e:
         sys.stderr.write(str(e) + '\n')
     if rs:
@@ -132,6 +132,44 @@ def search(q):
                 print s
             else:
                 print "%s: %s" % (doc.id, doc.data['body'].encode('utf8'))
+
+def server_search(*args):
+    try:
+        regex = args[0]
+    except IndexError:
+        sys.stderr.write('Argument REGEX required\n')
+        return None
+    try:
+        rs = client.server_search(regex)
+    except ClientException as e:
+        sys.stderr.write(str(e) + '\n')
+    if rs:
+        for doc in rs:
+            if colored:
+                tokens = doc.data['body'].rsplit('#')
+                s  = colored.blue(str(doc.sid) + ': ')
+                s += tokens[0].strip().encode('utf8')
+                if len(tokens) == 2:
+                    s += colored.green(' #' + tokens[1].encode('utf8'))
+                print s
+            else:
+                print "%s: %s" % (doc.sid, doc.data['body'].encode('utf8'))
+
+def copy(*args):
+    try:
+        sid = args[0]
+    except IndexError:
+        sys.stderr.write('Argument SID required\n')
+        return None
+    try:
+        from lai import config
+        doc = client.server_get(sid)
+        doc.user = config.USER
+        doc.sid  = None
+        doc.tid  = None
+        client.save(doc)
+    except ClientException as e:
+        sys.stderr.write(str(e) + '\n')
 
 def sync(*args):
     try:
@@ -227,27 +265,30 @@ def print_short_help():
     out += "       lai [--add TEXT | --edit ID NEW_TEXT | --editor [ID]]\n"
     out += "       lai [--get ID | --clip ID | --show ID | --del ID | --getall]\n"
     out += "       lai [--set-public ID | --unset-public ID]\n"
+    out += "       lai [--server-search REGEX | --copy SID]\n"
     out += "       lai [--gist ID]\n"
     out += "       lai [--help | --version]"
     print out
 
 def print_long_help():
-    out  = "Usage: lai REGEX                 Performs a regex search\n"
-    out += "       lai --add TEXT            Add new doc\n"
-    out += "       lai --edit ID NEW_TEXT    Edit inline a doc\n"
-    out += "       lai --editor [ID]         Add or edit with default text editor\n"
-    out += "       lai --get ID              Get a specific doc\n"
-    out += "       lai --clip ID             Show and copy to clipboard a specific doc\n"
-    out += "       lai --getall              Get all docs\n"
-    out += "       lai --del ID              Delete doc\n"
-    out += "       lai --gist ID             Send doc to Github Gist\n"
-    out += "       lai --set-public ID       Set public a doc\n"
-    out += "       lai --unset-public ID     Unset public a doc\n"
-    out += "       lai --show ID             Show all metadata from a specific doc\n"
-    out += "       lai --status              Show docs to sync\n"
-    out += "       lai --sync                Sync changes with server\n"
-    out += "       lai --help                Show this help\n"
-    out += "       lai --version             Show program version"
+    out  = "Usage: lai REGEX                  Performs a regex search\n"
+    out += "       lai --add TEXT             Add new doc\n"
+    out += "       lai --edit ID NEW_TEXT     Edit inline a doc\n"
+    out += "       lai --editor [ID]          Add or edit with default text editor\n"
+    out += "       lai --get ID               Get a specific doc\n"
+    out += "       lai --clip ID              Show and copy to clipboard a specific doc\n"
+    out += "       lai --getall               Get all docs\n"
+    out += "       lai --del ID               Delete doc\n"
+    out += "       lai --gist ID              Send doc to Github Gist\n"
+    out += "       lai --set-public ID        Set public a doc\n"
+    out += "       lai --unset-public ID      Unset public a doc\n"
+    out += "       lai --server-search REGEX  Performs a regex search in server\n"
+    out += "       lai --copy SID             Copy a public doc from server\n"
+    out += "       lai --show ID              Show all metadata from a specific doc\n"
+    out += "       lai --status               Show docs to sync\n"
+    out += "       lai --sync                 Sync changes with server\n"
+    out += "       lai --help                 Show this help\n"
+    out += "       lai --version              Show program version"
     print out
 
 def print_version():
@@ -262,21 +303,23 @@ if __name__ == '__main__':
         sys.stderr.write(str(e) + '\n')
     else:
         METHODS = {
-            '--get'         : get,
-            '--getall'      : getall,
-            '--clip'        : clip,
-            '--show'        : show,
-            '--add'         : add,
-            '--edit'        : edit,
-            '--del'         : delete,
-            '--sync'        : sync,
-            '--editor'      : editor,
-            '--set-public'  : set_public,
-            '--unset-public': unset_public,
-            '--status'      : status,
-            '--gist'        : send_to_gist,
-            '--help'        : print_long_help,
-            '--version'     : print_version,
+            '--get'          : get,
+            '--getall'       : getall,
+            '--clip'         : clip,
+            '--show'         : show,
+            '--add'          : add,
+            '--edit'         : edit,
+            '--del'          : delete,
+            '--sync'         : sync,
+            '--editor'       : editor,
+            '--set-public'   : set_public,
+            '--unset-public' : unset_public,
+            '--server-search': server_search,
+            '--copy'         : copy,
+            '--status'       : status,
+            '--gist'         : send_to_gist,
+            '--help'         : print_long_help,
+            '--version'      : print_version,
         }
 
         if len(sys.argv) > 1:

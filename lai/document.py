@@ -14,12 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with lai-client. If not, see <http://www.gnu.org/licenses/>.
 
+from lai import config
+
+
 class Document(object):
 
-    VALID_ATTRS = ('id', 'sid', 'tid', 'public', 'synced', 'data')
+    VALID_ATTRS = ('id', 'sid', 'tid', 'user', 'public', 'synced', 'data')
 
     def __init__(self, data=None, id=None, sid=None, tid=None,
-                 public=False, synced=False):
+                 user=None, public=False, synced=False):
+        if user is None:
+            user = config.USER
         self._data = None
         self.from_dict(locals())
 

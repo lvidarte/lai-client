@@ -81,6 +81,7 @@ class Client:
                 'key_name'  : config.KEY_NAME,
                 'session_id': None,
                 'process'   : None,
+                'value'     : None,
                 'last_tid'  : self.db.get_last_tid(),
                 'docs'      : []}
 
@@ -114,6 +115,25 @@ class Client:
         except DatabaseException as e:
             raise ClientException(e)
 
+    def server_search(self, regex):
+        request = self._get_request_base_doc()
+        request['process'] = 'search'
+        request['value'] = regex
+        response = self._send(request)
+        docs = []
+        for doc in response['docs']:
+            docs.append(Document(**doc))
+        return docs
+
+    def server_get(self, sid):
+        request = self._get_request_base_doc()
+        request['process'] = 'get'
+        request['value'] = sid
+        response = self._send(request)
+        if len(response['docs']) == 1:
+            doc = Document(**response['docs'][0])
+            return doc
+
     def status(self):
         try:
             return self.db.status()
@@ -135,8 +155,12 @@ class Client:
         return response
 
     def _get_url(self, request):
-        args = (config.SERVER, request['user'], request['process'])
-        url = '%s/sync?user=%s&process=%s' % args
+        if request['process'] in (UPDATE_PROCESS, COMMIT_PROCESS):
+            args = (config.SERVER, request['user'], request['process'])
+            url = '%s/sync?user=%s&process=%s' % args
+        else:
+            args = (config.SERVER, request['process'], request['user'])
+            url = '%s/%s?user=%s' % args
         return url
 
     def fetch(self, url, data=None):
