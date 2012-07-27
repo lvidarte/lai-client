@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if [ -z "$LAI_ENV_PATH" ] || [ -z "$LAI_MODULE_PATH" ]
+then
+    echo "You need to set the env vars"
+    echo "LAI_ENV_PATH and LAI_MODULE_PATH"
+    echo "with the absolute path to the virtualenv dir and"
+    echo "the lai module dir respec."
+    exit 1
+fi
+
+# Export path for virtualenv
+export PYTHONPATH=$LAI_MODULE_PATH
+
+# Activate virtualenv
+source $LAI_ENV_PATH/bin/activate
+
+# Run the app
+python $LAI_MODULE_PATH/lai/app.py "$@"
+
+# Finally..
+deactivate
+
