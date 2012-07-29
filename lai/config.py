@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with lai-client. If not, see <http://www.gnu.org/licenses/>.
 
-SERVER = "http://localhost:8888"
+SERVER_ADDR = "127.0.0.1"
+SERVER_PORT = 8888
 USER = "lvidarte@gmail.com"
 KEY_NAME = "howl"
 #GITHUB_USER = "lvidarte"

@@ -155,12 +155,9 @@ class Client:
         return response
 
     def _get_url(self, request):
-        if request['process'] in (UPDATE_PROCESS, COMMIT_PROCESS):
-            args = (config.SERVER, request['user'], request['process'])
-            url = '%s/sync?user=%s&process=%s' % args
-        else:
-            args = (config.SERVER, request['process'], request['user'])
-            url = '%s/%s?user=%s' % args
+        args = (config.SERVER_ADDR, config.SERVER_PORT,
+                request['process'], request['user'])
+        url = 'http://%s:%s/%s?user=%s' % args
         return url
 
     def fetch(self, url, data=None):
