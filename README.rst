@@ -27,7 +27,7 @@ Luego desde otro cliente::
 
 lai permite que guardes tus documentos como públicos o privados. Si compartís un servidor lai podés buscar entre los documentos públicos de otros usuarios y copiar a tu cuenta los que quieras::
 
-    javier@client3:~$ lai --public-search git
+    javier@client3:~$ lai --server-search git
     500230da304297180d207d4b: git fetch origin [remote-branch]:[new-local-branch]
     javier@client3:~$ lai --copy 500230da304297180d207d4b
 
