@@ -25,7 +25,7 @@ DATABASE1 = {
     'ENGINE': 'mongo',
     'HOST'  : 'localhost',
     'PORT'  : 27017,
-    'NAME'  : 'lai_cli_dev',
+    'NAME'  : 'lai_cli',
     'TABLE' : 'docs',
 }
 
