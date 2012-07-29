@@ -91,6 +91,15 @@ class Client:
         except DatabaseException as e:
             raise ClientException(e)
 
+    def server_get(self, sid):
+        request = self._get_request_base_doc()
+        request['process'] = 'get'
+        request['value'] = sid
+        response = self._send(request)
+        if len(response['docs']) == 1:
+            doc = Document(**response['docs'][0])
+            return doc
+
     def getall(self):
         try:
             return self.db.getall()
@@ -124,15 +133,6 @@ class Client:
         for doc in response['docs']:
             docs.append(Document(**doc))
         return docs
-
-    def server_get(self, sid):
-        request = self._get_request_base_doc()
-        request['process'] = 'get'
-        request['value'] = sid
-        response = self._send(request)
-        if len(response['docs']) == 1:
-            doc = Document(**response['docs'][0])
-            return doc
 
     def status(self):
         try:

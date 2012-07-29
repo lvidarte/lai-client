@@ -27,6 +27,7 @@ except:
 from lai import Client, Database, Document
 from lai.client import ClientException
 
+
 def add(*args):
     try:
         data = args[0]
@@ -121,17 +122,8 @@ def search(regex):
         rs = client.search(regex)
     except ClientException as e:
         sys.stderr.write(str(e) + '\n')
-    if rs:
-        for doc in rs:
-            if colored:
-                tokens = doc.data['body'].rsplit('#')
-                s  = colored.blue(str(doc.id) + ': ')
-                s += tokens[0].strip().encode('utf8')
-                if len(tokens) == 2:
-                    s += colored.green(' #' + tokens[1].encode('utf8'))
-                print s
-            else:
-                print "%s: %s" % (doc.id, doc.data['body'].encode('utf8'))
+    else:
+        _print_search(rs, id_key='id')
 
 def server_search(*args):
     try:
@@ -143,17 +135,22 @@ def server_search(*args):
         rs = client.server_search(regex)
     except ClientException as e:
         sys.stderr.write(str(e) + '\n')
+    else:
+        _print_search(rs, id_key='sid')
+
+def _print_search(rs, id_key):
     if rs:
         for doc in rs:
             if colored:
                 tokens = doc.data['body'].rsplit('#')
-                s  = colored.blue(str(doc.sid) + ': ')
+                s  = colored.blue(str(getattr(doc, id_key)) + ': ')
                 s += tokens[0].strip().encode('utf8')
                 if len(tokens) == 2:
                     s += colored.green(' #' + tokens[1].encode('utf8'))
                 print s
             else:
-                print "%s: %s" % (doc.sid, doc.data['body'].encode('utf8'))
+                print "%s: %s" % (getattr(doc, id_key),
+                                  doc.data['body'].encode('utf8'))
 
 def copy(*args):
     try:
