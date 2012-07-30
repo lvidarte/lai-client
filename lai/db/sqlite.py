@@ -1,8 +1,22 @@
 # -*- coding: utf-8 -*-
 
+# This file is part of lai-client.
+#
+# lai-client is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3
+# as published by the Free Software Foundation.
+#
+# lai-client is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with lai-client. If not, see <http://www.gnu.org/licenses/>.
+
 import sqlite3 as sqlite
 from lai.db.base import DBBase
-from lai.database import DatabaseException, UPDATE_RESPONSE, COMMIT_RESPONSE
+from lai.database import DatabaseException, UPDATE_PROCESS, COMMIT_PROCESS
 from lai import Document
 
 class DBSqlite(DBBase):
@@ -54,12 +68,12 @@ class DBSqlite(DBBase):
 
     def update(self, doc, type=None):
 
-        if type is None or type == UPDATE_RESPONSE:
+        if type is None or type == UPDATE_PROCESS:
             id = self._exists('sid', doc.sid)
             doc.id = id
-            synched = True if type == UPDATE_RESPONSE else False
+            synched = True if type == UPDATE_PROCESS else False
             self.save(doc, synched)
-        elif COMMIT_RESPONSE:
+        elif COMMIT_PROCESS:
             self._update_transaction(doc, synched=True)
 
     def get(self, id):
