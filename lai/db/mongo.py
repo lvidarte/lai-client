@@ -159,14 +159,13 @@ class DBMongo(DBBase):
         return self.update(doc)
 
     def save_last_sync(self, process, ids):
-        if len(ids):
-            coll = self.db['internal']
-            try:
-                spec = {'_id': 'last_sync'}
-                document = {'$set': {process: ids}}
-                coll.update(spec, document, upsert=True)
-            except Exception as e:
-                DatabaseException(e)
+        coll = self.db['internal']
+        try:
+            spec = {'_id': 'last_sync'}
+            document = {'$set': {process: ids}}
+            coll.update(spec, document, upsert=True)
+        except Exception as e:
+            DatabaseException(e)
 
     def get_docs_to_commit(self):
         try:
