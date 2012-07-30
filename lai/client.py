@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with lai-client. If not, see <http://www.gnu.org/licenses/>.
 
-import os.path
 import urllib
 import urllib2
 import json
@@ -27,10 +26,7 @@ from lai.lib import crypto
 #from lai.lib import gist
 
 
-PUB_KEY_FILE = os.path.join(os.path.expanduser('~'), ".ssh/id_rsa.pub")
-PUB_KEY = open(PUB_KEY_FILE).read()
-PRV_KEY_FILE = os.path.join(os.path.expanduser('~'), ".ssh/id_rsa")
-PRV_KEY = open(PRV_KEY_FILE).read()
+CLIENT_PRV_KEY = open(config.CLIENT_PRV_KEY_PATH, 'r').read()
 
 
 class ClientException(Exception):
@@ -142,7 +138,7 @@ class Client:
 
     def _send(self, request):
         msg  = json.dumps(request)
-        enc  = crypto.encrypt(msg, PUB_KEY)
+        enc  = crypto.encrypt(msg, config.SERVER_PUB_KEY)
         data = base64.b64encode(enc)
         try:
             url = self._get_url(request)
@@ -150,7 +146,7 @@ class Client:
         except urllib2.URLError as e:
             raise ClientException(e)
         enc = base64.b64decode(data)
-        msg = crypto.decrypt(enc, PRV_KEY)
+        msg = crypto.decrypt(enc, CLIENT_PRV_KEY)
         response = json.loads(msg)
         return response
 
