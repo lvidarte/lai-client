@@ -4,3 +4,4 @@
 env
 activate
 python
+local_config.py
