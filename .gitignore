@@ -4,3 +4,5 @@
 env
 config.sh
 *.db
+activate
+bin
