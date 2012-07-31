@@ -17,7 +17,8 @@
 import pymongo
 from pymongo.errors import AutoReconnect
 from lai.db.base import DBBase
-from lai.database import DatabaseException, UPDATE_PROCESS, COMMIT_PROCESS
+from lai.database import UPDATE_PROCESS, COMMIT_PROCESS
+from lai.database import DatabaseException, NotFoundError
 from lai import Document
 
 
@@ -38,7 +39,7 @@ class DBMongo(DBBase):
             sort = [('tid', -1)]
             row = self.collection.find_one(spec, sort=sort)
         except Exception as e:
-            DatabaseException(e)
+            raise DatabaseException(e)
         if row:
             return row['tid']
         return 0
@@ -50,7 +51,7 @@ class DBMongo(DBBase):
             update = {'$inc': {'id': 1}}
             row = coll.find_and_modify(query, update, upsert=True, new=True)
         except Exception as e:
-            DatabaseException(e)
+            raise DatabaseException(e)
         return row['id']
 
     def search(self, regex):
@@ -59,7 +60,7 @@ class DBMongo(DBBase):
             fields = {'_id': 0}
             cur = self.collection.find(spec, fields)
         except Exception as e:
-            DatabaseException(e)
+            raise DatabaseException(e)
         return [Document(**row) for row in cur]
 
     def status(self):
@@ -89,10 +90,10 @@ class DBMongo(DBBase):
             fields = {'_id': 0}
             row = self.collection.find_one(spec, fields)
         except Exception as e:
-            DatabaseException(e)
+            raise DatabaseException(e)
         if row:
             return Document(**row)
-        raise DatabaseException('Document not found')
+        raise NotFoundError('id %s not found' % id)
 
     def getall(self):
         try:
@@ -101,7 +102,7 @@ class DBMongo(DBBase):
             sort = [('tid', 1)]
             cur = self.collection.find(spec, fields, sort=sort)
         except Exception as e:
-            DatabaseException(e)
+            raise DatabaseException(e)
         return [Document(**row) for row in cur]
 
     def save(self, doc):
@@ -165,7 +166,7 @@ class DBMongo(DBBase):
             document = {'$set': {process: ids}}
             coll.update(spec, document, upsert=True)
         except Exception as e:
-            DatabaseException(e)
+            raise DatabaseException(e)
 
     def get_docs_to_commit(self):
         try:
@@ -173,7 +174,7 @@ class DBMongo(DBBase):
             fields = {'_id': 0}
             cur = self.collection.find(spec, fields)
         except Exception as e:
-            DatabaseException(e)
+            raise DatabaseException(e)
         return list(cur)
 
     def __str__(self):

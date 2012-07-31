@@ -25,6 +25,10 @@ class DatabaseException(Exception):
     pass
 
 
+class NotFoundError(DatabaseException):
+    pass
+
+
 class Database(object):
     """Factory"""
 

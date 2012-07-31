@@ -25,30 +25,25 @@ except:
     colored = None
 
 from lai import Client, Database, Document
-from lai.client import ClientException
+from lai.database import NotFoundError
 
 
 def add(*args):
     try:
         data = args[0]
     except IndexError:
-        sys.stderr.write('Argument TEXT required\n')
-        return None
+        sys.exit('Argument TEXT required')
     doc = Document(data)
-    try:
-        doc = client.save(doc)
-    except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
+    doc = client.save(doc)
 
 def get(*args):
     try:
         id = args[0]
     except IndexError:
-        sys.stderr.write('Argument ID required\n')
-        return None
+        sys.exit('Argument ID required')
     try:
         doc = client.get(id)
-    except ClientException as e:
+    except NotFoundError:
         pass
     else:
         print doc.data['body']
@@ -62,29 +57,24 @@ def clip(*args):
     try:
         id = args[0]
     except IndexError:
-        sys.stderr.write('Argument ID required\n')
-        return None
-    try:
-        doc = client.get(id)
-    except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
+        sys.exit('Argument ID required')
+    doc = client.get(id)
     if doc.data:
         import pyperclip
         if pyperclip.copy is not None:
             pyperclip.copy(doc.data)
             print doc.data
         else:
-            sys.stderr.write('Can\'t copy the content to the clipboard. Do you have xclip installed?\n')
+            sys.exit('Can\'t copy the content to the clipboard. Do you have xclip installed?')
 
 def show(*args):
     try:
         id = args[0]
     except IndexError:
-        sys.stderr.write('Argument ID required\n')
-        return None
+        sys.exit('Argument ID required')
     try:
         doc = client.get(id)
-    except ClientException as e:
+    except NotFoundError:
         pass
     else:
         for key in ('id', 'sid', 'tid', 'user', 'public', 'synced', 'data'):
@@ -98,45 +88,32 @@ def edit(*args):
         id = args[0]
         data = args[1]
     except IndexError:
-        sys.stderr.write('Arguments ID and NEW_TEXT required\n')
-        return None
-    doc = client.get(id)
-    doc.data = data
+        sys.exit('Arguments ID and NEW_TEXT required')
     try:
-        doc = client.save(doc)
-    except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
+        doc = client.get(id)
+    except NotFoundError:
+        sys.exit('Document not found')
+    doc.data = data
+    doc = client.save(doc)
 
 def delete(*args):
     try:
         doc = client.get(args[0])
     except IndexError:
-        sys.stderr.write('Argument ID required\n')
-    try:
-        doc = client.delete(doc)
-    except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
+        sys.exit('Argument ID required')
+    doc = client.delete(doc)
 
 def search(regex):
-    try:
-        rs = client.search(regex)
-    except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
-    else:
-        _print_search(rs, id_key='id')
+    rs = client.search(regex)
+    _print_search(rs, id_key='id')
 
 def server_search(*args):
     try:
         regex = args[0]
     except IndexError:
-        sys.stderr.write('Argument REGEX required\n')
-        return None
-    try:
-        rs = client.server_search(regex)
-    except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
-    else:
-        _print_search(rs, id_key='sid')
+        sys.exit('Argument REGEX required')
+    rs = client.server_search(regex)
+    _print_search(rs, id_key='sid')
 
 def _print_search(rs, id_key):
     if rs:
@@ -156,30 +133,22 @@ def copy(*args):
     try:
         sid = args[0]
     except IndexError:
-        sys.stderr.write('Argument SID required\n')
-        return None
-    try:
-        from lai import config
-        doc = client.server_get(sid)
-        doc.user = config.USER
-        doc.sid  = None
-        doc.tid  = None
-        client.save(doc)
-    except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
+        sys.exit('Argument SID required')
+    from lai import config
+    doc = client.server_get(sid)
+    doc.user = config.USER
+    doc.sid  = None
+    doc.tid  = None
+    client.save(doc)
 
 def sync(*args):
-    try:
-        client.sync()
-    except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
+    client.sync()
 
 def editor(*args):
     editor_cmd = os.getenv('EDITOR')
 
     if editor_cmd is None:
-        sys.stderr.write("Environment var EDITOR is unset\n")
-        return None
+        sys.exit("Environment var EDITOR is unset")
 
     if len(args):
         doc = client.get(args[0])
@@ -210,22 +179,15 @@ def _set(key, value, *args):
     try:
         id = args[0]
     except IndexError:
-        sys.stderr.write('Argument ID required\n')
-        return None
-    try:
-        doc = client.get(id)
-        setattr(doc, key, value)
-        client.save(doc)
-    except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
+        sys.exit('Argument ID required')
+    doc = client.get(id)
+    setattr(doc, key, value)
+    client.save(doc)
 
 def status(*args):
-    try:
-        docs = client.status()
-    except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
+    docs = client.status()
     def print_docs(docs):
-        if len(docs):
+        if docs is not None:
             for doc in docs:
                 if doc.data is None:
                     data = "[DELETED]"
@@ -246,15 +208,10 @@ def send_to_gist(*args):
     try:
         id = args[0]
     except IndexError:
-        sys.stderr.write('Argument ID required\n')
-        return None
-    try:
-        doc = client.get(id)
-        html_url = client.send_to_gist(doc)
-        sys.stderr.write(html_url + '\n')
-
-    except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
+        sys.exit('Argument ID required')
+    doc = client.get(id)
+    html_url = client.send_to_gist(doc)
+    sys.stderr.write(html_url + '\n')
 
 def print_short_help():
     out  = "Usage: lai REGEX\n"
@@ -294,45 +251,42 @@ def print_version():
 
 
 if __name__ == '__main__':
-    try:
-        client = Client(Database())
-    except ClientException as e:
-        sys.stderr.write(str(e) + '\n')
-    else:
-        METHODS = {
-            '--get'          : get,
-            '--getall'       : getall,
-            '--clip'         : clip,
-            '--show'         : show,
-            '--add'          : add,
-            '--edit'         : edit,
-            '--del'          : delete,
-            '--sync'         : sync,
-            '--editor'       : editor,
-            '--set-public'   : set_public,
-            '--unset-public' : unset_public,
-            '--server-search': server_search,
-            '--copy'         : copy,
-            '--status'       : status,
-            '--gist'         : send_to_gist,
-            '--help'         : print_long_help,
-            '--version'      : print_version,
-        }
+    client = Client(Database())
 
-        if len(sys.argv) > 1:
-            rs = None
-            if sys.argv[1].startswith('--'):
-                try:
-                    fn = METHODS[sys.argv[1]]
-                except KeyError:
-                    sys.stderr.write('Invalid argument\n')
-                else:
-                    if len(sys.argv) > 2:
-                        rs = fn(*sys.argv[2:])
-                    else:
-                        rs = fn()
+    METHODS = {
+        '--get'          : get,
+        '--getall'       : getall,
+        '--clip'         : clip,
+        '--show'         : show,
+        '--add'          : add,
+        '--edit'         : edit,
+        '--del'          : delete,
+        '--sync'         : sync,
+        '--editor'       : editor,
+        '--set-public'   : set_public,
+        '--unset-public' : unset_public,
+        '--server-search': server_search,
+        '--copy'         : copy,
+        '--status'       : status,
+        '--gist'         : send_to_gist,
+        '--help'         : print_long_help,
+        '--version'      : print_version,
+    }
+
+    if len(sys.argv) > 1:
+        rs = None
+        if sys.argv[1].startswith('--'):
+            try:
+                fn = METHODS[sys.argv[1]]
+            except KeyError:
+                sys.exit('Invalid argument')
             else:
-                search(sys.argv[1])
+                if len(sys.argv) > 2:
+                    rs = fn(*sys.argv[2:])
+                else:
+                    rs = fn()
         else:
-            print_short_help()
+            search(sys.argv[1])
+    else:
+        print_short_help()
 

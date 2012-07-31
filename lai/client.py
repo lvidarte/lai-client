@@ -29,18 +29,11 @@ from lai.lib import crypto
 CLIENT_PRV_KEY = open(config.CLIENT_PRV_KEY_PATH, 'r').read()
 
 
-class ClientException(Exception):
-    pass
-
-
 class Client:
 
     def __init__(self, database):
-        try:
-            self.db = database
-            self.db.connect()
-        except DatabaseException as e:
-            raise ClientException(e)
+        self.db = database
+        self.db.connect()
 
     def sync(self):
         # Update
@@ -64,12 +57,9 @@ class Client:
         ids = []
         if len(response['docs']):
             for doc_ in response['docs']:
-                try: 
-                    doc = Document(**doc_)
-                    doc = self.db.update(doc, type=response['process'])
-                    ids.append(doc.id)
-                except DatabaseException as e:
-                    raise ClientException(e)
+                doc = Document(**doc_)
+                doc = self.db.update(doc, type=response['process'])
+                ids.append(doc.id)
         return ids
 
     def _get_request_base_doc(self):
@@ -82,10 +72,7 @@ class Client:
                 'docs'      : []}
 
     def get(self, id):
-        try:
-            return self.db.get(id)
-        except DatabaseException as e:
-            raise ClientException(e)
+        return self.db.get(id)
 
     def server_get(self, sid):
         request = self._get_request_base_doc()
@@ -97,28 +84,16 @@ class Client:
             return doc
 
     def getall(self):
-        try:
-            return self.db.getall()
-        except DatabaseException as e:
-            raise ClientException(e)
+        return self.db.getall()
 
     def save(self, doc):
-        try:
-            return self.db.save(doc)
-        except DatabaseException as e:
-            raise ClientException(e)
+        return self.db.save(doc)
 
     def delete(self, doc):
-        try:
-            return self.db.delete(doc)
-        except DatabaseException as e:
-            raise ClientException(e)
+        return self.db.delete(doc)
 
     def search(self, regex):
-        try:
-            return self.db.search(regex)
-        except DatabaseException as e:
-            raise ClientException(e)
+        return self.db.search(regex)
 
     def server_search(self, regex):
         request = self._get_request_base_doc()
@@ -131,20 +106,16 @@ class Client:
         return docs
 
     def status(self):
-        try:
-            return self.db.status()
-        except DatabaseException as e:
-            raise ClientException(e)
+        return self.db.status()
 
     def _send(self, request):
         msg  = json.dumps(request)
         enc  = crypto.encrypt(msg, config.SERVER_PUB_KEY)
         data = base64.b64encode(enc)
-        try:
-            url = self._get_url(request)
-            data = self.fetch(url, data)
-        except urllib2.URLError as e:
-            raise ClientException(e)
+        
+        url = self._get_url(request)
+        data = self.fetch(url, data)
+
         enc = base64.b64decode(data)
         msg = crypto.decrypt(enc, CLIENT_PRV_KEY)
         response = json.loads(msg)
@@ -166,11 +137,8 @@ class Client:
         return res.read()
 
 #   def send_to_gist(self, doc):
-#       try:
-#           g = gist.Gist(config.GITHUB_USER, config.GITHUB_PASSWORD)
-#           return g.create(True, doc)
-#       except gist.GistException as e:
-#           raise ClientException(e)
+#       g = gist.Gist(config.GITHUB_USER, config.GITHUB_PASSWORD)
+#       return g.create(True, doc)
 
 if __name__ == '__main__':
     from lai.database import Database
