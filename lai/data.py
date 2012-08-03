@@ -14,10 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with lai-client. If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ['config', 'Client', 'Database', 'Document', 'Data']
-from lai.client import Client
-from lai.document import Document
-from lai.database import Database
-from lai.data import Data
 
-version = '0.3.1'
+class Data(dict):
+
+    def __init__(self, body=None, help=None, *args, **kwargs):
+        self.__setitem__('body', body)
+        self.__setitem__('help', help)
+        super(Data, self).__init__(*args, **kwargs)
+
+    def __getattr__(self, attr):
+        return self.get(attr, None)
+
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+

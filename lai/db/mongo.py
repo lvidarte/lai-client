@@ -56,7 +56,8 @@ class DBMongo(DBBase):
 
     def search(self, regex):
         try:
-            spec = {'data.body': {'$regex': regex, '$options': 'im'}}
+            spec = {'$or': [{'data.body': {'$regex': regex, '$options': 'im'}},
+                            {'data.help': {'$regex': regex, '$options': 'im'}}]}
             fields = {'_id': 0}
             cur = self.collection.find(spec, fields)
         except Exception as e:
@@ -115,7 +116,7 @@ class DBMongo(DBBase):
         doc.id = self.get_next_id()
         doc.synced = synced
         try:
-            self.collection.insert(doc.to_dict())
+            self.collection.insert(doc)
         except Exception as e:
             raise DatabaseException(e)
         return doc
@@ -125,24 +126,24 @@ class DBMongo(DBBase):
             pk = 'id'
             id = doc.id
             doc.synced = False
-            doc_ = doc.to_dict()
+            set = doc
         elif type == UPDATE_PROCESS:
             if self.collection.find({'sid': doc.sid}).count() == 0:
                 return self.insert(doc, synced=True)
             pk = 'sid'
             id = doc.sid
             doc.synced = True
-            doc_ = doc.to_dict()
+            set = doc
         elif type == COMMIT_PROCESS:
             pk = 'id'
             id = doc.id
             doc.synced = True
-            doc_ = {'sid': doc.sid, 'tid': doc.tid, 'synced': doc.synced}
+            set = {'sid': doc.sid, 'tid': doc.tid, 'synced': doc.synced}
         else:
             raise DatabaseException('incorrect type')
 
         try:
-            rs = self.collection.update({pk: id}, {'$set': doc_}, safe=True)
+            rs = self.collection.update({pk: id}, {'$set': set}, safe=True)
             assert rs['n'] == 1
         except Exception as e:
             raise DatabaseException(e)

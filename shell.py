@@ -21,7 +21,7 @@ import readline
 import rlcompleter
 
 from pprint import pprint as pp
-from lai import config, Client, Database, Document
+from lai import config, Client, Database, Document, Data
 
 
 historyPath = os.path.expanduser("~/.pyhistory")

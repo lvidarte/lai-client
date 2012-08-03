@@ -15,48 +15,39 @@
 # along with lai-client. If not, see <http://www.gnu.org/licenses/>.
 
 from lai import config
+from lai.data import Data
 
 
-class Document(object):
+class Document(dict):
 
     VALID_ATTRS = ('id', 'sid', 'tid', 'user', 'public', 'synced', 'data')
 
     def __init__(self, data=None, id=None, sid=None, tid=None,
                  user=None, public=False, synced=False):
+        self.__setitem__('data', data)
+        self.__setitem__('id', id)
+        self.__setitem__('sid', sid)
+        self.__setitem__('tid', tid)
         if user is None:
             user = config.USER
-        self._data = None
-        self.from_dict(locals())
+        self.__setitem__('user', user)
+        self.__setitem__('public', public)
+        self.__setitem__('synced', synced)
 
-    def get_data(self):
-        return self._data
+    def __getattr__(self, attr):
+        return self.get(attr, None)
 
-    def set_data(self, value):
-        if isinstance(value, (str, unicode)) and value.strip() == '':
-            value = None
-        if type(value) != dict and value is not None:
-            value = {'body': value}
-        self._data = value
+    def __setitem__(self, key, value):
+        if key in self.VALID_ATTRS:
+            if key == 'data' and (value is not None and type(value) != Data):
+                if type(value) == dict:
+                    value = Data(**value)
+                else:
+                    value = Data(value)
+            super(Document, self).__setitem__(key, value)
 
-    def del_data(self):
-        self._data = None
-
-    data = property(get_data, set_data, del_data)
-
-    def from_dict(self, mapping):
-        for key, value in mapping.items():
-            if key in self.VALID_ATTRS:
-                setattr(self, key, value)
-
-    def to_dict(self):
-        doc = {'data': self._data}
-        for key, value in self.__dict__.items():
-            if key in self.VALID_ATTRS:
-                doc[key] = value
-        return doc
-
-    def __repr__(self):
-        return str(self.to_dict())
+    __setattr__ = __setitem__
+    __delattr__ = dict.__delitem__
 
 
 if __name__ == '__main__':
