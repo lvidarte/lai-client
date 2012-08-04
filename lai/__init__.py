@@ -20,4 +20,4 @@ from lai.document import Document
 from lai.database import Database
 from lai.data import Data
 
-version = '0.3.1'
+version = '0.3.2'
