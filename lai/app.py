@@ -24,16 +24,20 @@ try:
 except:
     colored = None
 
-from lai import Client, Database, Document
+from lai import Client, Database, Document, Data
 from lai.database import NotFoundError
 
 
 def add(*args):
     try:
-        data = args[0]
+        content = args[0].strip()
     except IndexError:
         sys.exit('Argument TEXT required')
-    doc = Document(data)
+    try:
+        help = args[1]
+    except IndexError:
+        help = None
+    doc = Document(Data(content, help))
     doc = client.save(doc)
 
 def get(*args):
@@ -46,12 +50,15 @@ def get(*args):
     except NotFoundError:
         pass
     else:
-        print doc.data.body
+        print doc.data.content
 
 def getall(*args):
     docs = client.getall()
     for doc in docs:
-        print "%d: %s" % (doc.id, doc.data.body)
+        s = "%s: %s" % (doc.id, doc.data.content)
+        if doc.data.help:
+            s += ' :' + doc.data.help
+        print s.encode('utf8')
 
 def clip(*args):
     try:
@@ -86,15 +93,22 @@ def show(*args):
 def edit(*args):
     try:
         id = args[0]
-        data = args[1]
+        content = args[1].strip()
     except IndexError:
-        sys.exit('Arguments ID and NEW_TEXT required')
+        sys.exit('Arguments ID and TEXT required')
     try:
         doc = client.get(id)
     except NotFoundError:
         sys.exit('Document not found')
-    doc.data = data
-    doc = client.save(doc)
+    save = False
+    if content != '':
+        doc.data.content = content
+        save = True
+    if len(args) == 3:
+        doc.data.help = args[2].strip()
+        save = True
+    if save:
+        doc = client.save(doc)
 
 def delete(*args):
     try:
@@ -118,16 +132,19 @@ def server_search(*args):
 def _print_search(rs, id_key):
     if rs:
         for doc in rs:
+            id      = str(getattr(doc, id_key))
+            content = doc.data.content
+            help    = doc.data.help
             if colored:
-                tokens = doc.data.body.rsplit('#')
-                s  = colored.blue(str(getattr(doc, id_key)) + ': ')
-                s += tokens[0].strip().encode('utf8')
-                if len(tokens) == 2:
-                    s += colored.green(' #' + tokens[1].encode('utf8'))
-                print s
+                s  = colored.green(id + ': ')
+                s += content.encode('utf8')
+                if help:
+                    s += colored.blue(' :' + help.encode('utf8'))
             else:
-                print "%s: %s" % (getattr(doc, id_key),
-                                  doc.data.body.encode('utf8'))
+                s = "%s: %s" % (id, content.encode('utf8'))
+                if help:
+                    s += ' :' + help.encode('utf8')
+            print s
 
 def copy(*args):
     try:
@@ -158,7 +175,7 @@ def editor(*args):
     (_, filename) = tempfile.mkstemp()
 
     with codecs.open(filename, 'w', encoding='utf8') as file:
-        data = "" if doc.data is None else doc.data.body
+        data = "" if doc.data is None else doc.data.content
         file.write(data)
 
     if os.system(editor_cmd + " " + filename) == 0:
@@ -192,7 +209,7 @@ def status(*args):
                 if doc.data is None:
                     data = "[DELETED]"
                 else:
-                    data = doc.data.body
+                    data = doc.data.content
                 print "{:>6}: {:.70}".format(doc.id, data)
         else:
             print "None"
@@ -216,7 +233,7 @@ def send_to_gist(*args):
 def print_short_help():
     out  = "Usage: lai REGEX\n"
     out += "       lai [--sync | --status]\n"
-    out += "       lai [--add TEXT | --edit ID NEW_TEXT | --editor [ID]]\n"
+    out += "       lai [--add TEXT [HELP] | --edit ID TEXT [HELP] | --editor [ID]]\n"
     out += "       lai [--get ID | --clip ID | --show ID | --del ID | --getall]\n"
     out += "       lai [--set-public ID | --unset-public ID]\n"
     out += "       lai [--server-search REGEX | --copy SID]\n"
@@ -226,8 +243,8 @@ def print_short_help():
 
 def print_long_help():
     out  = "Usage: lai REGEX                  Performs a regex search\n"
-    out += "       lai --add TEXT             Add new doc\n"
-    out += "       lai --edit ID NEW_TEXT     Edit inline a doc\n"
+    out += "       lai --add TEXT [HELP]      Add new doc\n"
+    out += "       lai --edit ID TEXT [HELP]  Edit inline a doc\n"
     out += "       lai --editor [ID]          Add or edit with default text editor\n"
     out += "       lai --get ID               Get a specific doc\n"
     out += "       lai --clip ID              Show and copy to clipboard a specific doc\n"

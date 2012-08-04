@@ -17,8 +17,8 @@
 
 class Data(dict):
 
-    def __init__(self, body=None, help=None, *args, **kwargs):
-        self.__setitem__('body', body)
+    def __init__(self, content=None, help=None, *args, **kwargs):
+        self.__setitem__('content', content)
         self.__setitem__('help', help)
         super(Data, self).__init__(*args, **kwargs)
 
