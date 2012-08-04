@@ -29,7 +29,6 @@ class DBMongo(DBBase):
             self.connection = pymongo.Connection(self.config['HOST'],
                                                  self.config['PORT'])
             self.db = self.connection[self.config['NAME']]
-            self.collection = self.db[self.config['TABLE']]
         except AutoReconnect:
             raise DatabaseException("It's not possible connect to the database")
 
@@ -37,7 +36,7 @@ class DBMongo(DBBase):
         try:
             spec = {'tid': {'$gt': 0}}
             sort = [('tid', -1)]
-            row = self.collection.find_one(spec, sort=sort)
+            row = self.db.docs.find_one(spec, sort=sort)
         except Exception as e:
             raise DatabaseException(e)
         if row:
@@ -45,11 +44,11 @@ class DBMongo(DBBase):
         return 0
 
     def get_next_id(self):
-        coll = self.db['internal']
         try:
             query = {'_id': 'last_id'}
             update = {'$inc': {'id': 1}}
-            row = coll.find_and_modify(query, update, upsert=True, new=True)
+            fn = self.db.internal.find_and_modify
+            row = fn(query, update, upsert=True, new=True)
         except Exception as e:
             raise DatabaseException(e)
         return row['id']
@@ -59,7 +58,7 @@ class DBMongo(DBBase):
             spec = {'$or': [{'data.content': {'$regex': regex, '$options': 'im'}},
                             {'data.help'   : {'$regex': regex, '$options': 'im'}}]}
             fields = {'_id': 0}
-            cur = self.collection.find(spec, fields)
+            cur = self.db.docs.find(spec, fields)
         except Exception as e:
             raise DatabaseException(e)
         return [Document(**row) for row in cur]
@@ -89,7 +88,7 @@ class DBMongo(DBBase):
         try:
             spec = {'id': int(id)}
             fields = {'_id': 0}
-            row = self.collection.find_one(spec, fields)
+            row = self.db.docs.find_one(spec, fields)
         except Exception as e:
             raise DatabaseException(e)
         if row:
@@ -101,7 +100,7 @@ class DBMongo(DBBase):
             spec = {'data.content': {'$exists': 1}}
             fields = {'_id': 0}
             sort = [('tid', 1)]
-            cur = self.collection.find(spec, fields, sort=sort)
+            cur = self.db.docs.find(spec, fields, sort=sort)
         except Exception as e:
             raise DatabaseException(e)
         return [Document(**row) for row in cur]
@@ -116,7 +115,7 @@ class DBMongo(DBBase):
         doc.id = self.get_next_id()
         doc.synced = synced
         try:
-            self.collection.insert(doc)
+            self.db.docs.insert(doc)
         except Exception as e:
             raise DatabaseException(e)
         return doc
@@ -128,7 +127,7 @@ class DBMongo(DBBase):
             doc.synced = False
             set = doc
         elif type == UPDATE_PROCESS:
-            if self.collection.find({'sid': doc.sid}).count() == 0:
+            if self.db.docs.find({'sid': doc.sid}).count() == 0:
                 return self.insert(doc, synced=True)
             pk = 'sid'
             id = doc.sid
@@ -143,7 +142,7 @@ class DBMongo(DBBase):
             raise DatabaseException('incorrect type')
 
         try:
-            rs = self.collection.update({pk: id}, {'$set': set}, safe=True)
+            rs = self.db.docs.update({pk: id}, {'$set': set}, safe=True)
             assert rs['n'] == 1
         except Exception as e:
             raise DatabaseException(e)
@@ -154,18 +153,17 @@ class DBMongo(DBBase):
         if doc.id is None:
             raise DatabaseException('Document does not have id')
         if doc.sid is None:
-            self.collection.remove({'id': doc.id})
+            self.db.docs.remove({'id': doc.id})
             return None
         doc.data = None
         doc.synced = False
         return self.update(doc)
 
     def save_last_sync(self, process, ids):
-        coll = self.db['internal']
         try:
             spec = {'_id': 'last_sync'}
             document = {'$set': {process: ids}}
-            coll.update(spec, document, upsert=True)
+            self.db.internal.update(spec, document, upsert=True)
         except Exception as e:
             raise DatabaseException(e)
 
@@ -173,15 +171,14 @@ class DBMongo(DBBase):
         try:
             spec = {'synced': False}
             fields = {'_id': 0}
-            cur = self.collection.find(spec, fields)
+            cur = self.db.docs.find(spec, fields)
         except Exception as e:
             raise DatabaseException(e)
         return list(cur)
 
     def __str__(self):
-        return "%s://%s:%s/%s?%s" % (self.config['ENGINE'],
-                                     self.config['HOST'],
-                                     self.config['PORT'],
-                                     self.config['NAME'],
-                                     self.config['TABLE'])
+        return "%s://%s:%s/%s" % (self.config['ENGINE'],
+                                  self.config['HOST'],
+                                  self.config['PORT'],
+                                  self.config['NAME'])
 

@@ -29,14 +29,12 @@ DATABASE1 = {
     'ENGINE': 'mongo',
     'HOST'  : 'localhost',
     'PORT'  : 27017,
-    'NAME'  : 'lai_cli',
-    'TABLE' : 'docs',
+    'NAME'  : 'lai_client',
 }
 
 DATABASE2 = {
     'ENGINE': 'sqlite',
     'NAME'  : 'lai.db',
-    'TABLE' : 'docs',
 }
 
 DATABASE = DATABASE1
