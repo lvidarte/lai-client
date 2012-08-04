@@ -46,12 +46,12 @@ def get(*args):
     except NotFoundError:
         pass
     else:
-        print doc.data['body']
+        print doc.data.body
 
 def getall(*args):
     docs = client.getall()
     for doc in docs:
-        print "%d: %s" % (doc.id, doc.data['body'])
+        print "%d: %s" % (doc.id, doc.data.body)
 
 def clip(*args):
     try:
@@ -77,11 +77,11 @@ def show(*args):
     except NotFoundError:
         pass
     else:
-        for key in ('id', 'sid', 'tid', 'user', 'public', 'synced', 'data'):
-            value = getattr(doc, key)
+        for attr in Document.VALID_ATTRS:
+            value = getattr(doc, attr)
             if type(value) == list:
                 value = ','.join(value)
-            print "%s: %s" % (key, value)
+            print "%s: %s" % (attr, value)
 
 def edit(*args):
     try:
@@ -119,7 +119,7 @@ def _print_search(rs, id_key):
     if rs:
         for doc in rs:
             if colored:
-                tokens = doc.data['body'].rsplit('#')
+                tokens = doc.data.body.rsplit('#')
                 s  = colored.blue(str(getattr(doc, id_key)) + ': ')
                 s += tokens[0].strip().encode('utf8')
                 if len(tokens) == 2:
@@ -127,7 +127,7 @@ def _print_search(rs, id_key):
                 print s
             else:
                 print "%s: %s" % (getattr(doc, id_key),
-                                  doc.data['body'].encode('utf8'))
+                                  doc.data.body.encode('utf8'))
 
 def copy(*args):
     try:
@@ -158,7 +158,7 @@ def editor(*args):
     (_, filename) = tempfile.mkstemp()
 
     with codecs.open(filename, 'w', encoding='utf8') as file:
-        data = "" if doc.data is None else doc.data['body']
+        data = "" if doc.data is None else doc.data.body
         file.write(data)
 
     if os.system(editor_cmd + " " + filename) == 0:
@@ -192,7 +192,7 @@ def status(*args):
                 if doc.data is None:
                     data = "[DELETED]"
                 else:
-                    data = doc.data['body']
+                    data = doc.data.body
                 print "{:>6}: {:.70}".format(doc.id, data)
         else:
             print "None"
