@@ -209,7 +209,7 @@ def status(*args):
                 if doc.data is None:
                     data = "[DELETED]"
                 else:
-                    data = doc.data.content
+                    data = doc.data.content.encode('utf8')
                 print "{:>6}: {:.70}".format(doc.id, data)
         else:
             print "None"
