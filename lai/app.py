@@ -32,7 +32,7 @@ def add(*args):
     try:
         content = args[0].strip()
     except IndexError:
-        sys.exit('Argument TEXT required')
+        sys.exit('Argument CONTENT required')
     try:
         help = args[1]
     except IndexError:
@@ -95,7 +95,7 @@ def edit(*args):
         id = args[0]
         content = args[1].strip()
     except IndexError:
-        sys.exit('Arguments ID and TEXT required')
+        sys.exit('Arguments ID and CONTENT required')
     try:
         doc = client.get(id)
     except NotFoundError:
@@ -233,7 +233,7 @@ def send_to_gist(*args):
 def print_short_help():
     out  = "Usage: lai REGEX\n"
     out += "       lai [--sync | --status]\n"
-    out += "       lai [--add TEXT [HELP] | --edit ID TEXT [HELP] | --editor [ID]]\n"
+    out += "       lai [--add CONTENT [HELP] | --edit ID CONTENT [HELP] | --editor [ID]]\n"
     out += "       lai [--get ID | --clip ID | --show ID | --del ID | --getall]\n"
     out += "       lai [--set-public ID | --unset-public ID]\n"
     out += "       lai [--server-search REGEX | --copy SID]\n"
@@ -242,24 +242,24 @@ def print_short_help():
     print out
 
 def print_long_help():
-    out  = "Usage: lai REGEX                  Performs a regex search\n"
-    out += "       lai --add TEXT [HELP]      Add new doc\n"
-    out += "       lai --edit ID TEXT [HELP]  Edit inline a doc\n"
-    out += "       lai --editor [ID]          Add or edit with default text editor\n"
-    out += "       lai --get ID               Get a specific doc\n"
-    out += "       lai --clip ID              Show and copy to clipboard a specific doc\n"
-    out += "       lai --getall               Get all docs\n"
-    out += "       lai --del ID               Delete doc\n"
-    out += "       lai --gist ID              Send doc to Github Gist\n"
-    out += "       lai --set-public ID        Set public a doc\n"
-    out += "       lai --unset-public ID      Unset public a doc\n"
-    out += "       lai --server-search REGEX  Performs a regex search in server\n"
-    out += "       lai --copy SID             Copy a public doc from server\n"
-    out += "       lai --show ID              Show all metadata from a specific doc\n"
-    out += "       lai --status               Show docs to sync\n"
-    out += "       lai --sync                 Sync changes with server\n"
-    out += "       lai --help                 Show this help\n"
-    out += "       lai --version              Show program version"
+    out  = "Usage: lai REGEX                     Performs a regex search\n"
+    out += "       lai --add CONTENT [HELP]      Add new doc\n"
+    out += "       lai --edit ID CONTENT [HELP]  Edit inline a doc\n"
+    out += "       lai --editor [ID]             Add or edit with default text editor\n"
+    out += "       lai --get ID                  Get a specific doc\n"
+    out += "       lai --clip ID                 Show and copy to clipboard a specific doc\n"
+    out += "       lai --getall                  Get all docs\n"
+    out += "       lai --del ID                  Delete doc\n"
+    out += "       lai --gist ID                 Send doc to Github Gist\n"
+    out += "       lai --set-public ID           Set public a doc\n"
+    out += "       lai --unset-public ID         Unset public a doc\n"
+    out += "       lai --server-search REGEX     Performs a regex search in server\n"
+    out += "       lai --copy SID                Copy a public doc from server\n"
+    out += "       lai --show ID                 Show all metadata from a specific doc\n"
+    out += "       lai --status                  Show docs to sync\n"
+    out += "       lai --sync                    Sync changes with server\n"
+    out += "       lai --help                    Show this help\n"
+    out += "       lai --version                 Show program version"
     print out
 
 def print_version():
