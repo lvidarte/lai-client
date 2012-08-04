@@ -2,21 +2,25 @@
 # -*- coding: utf-8 -*-
 
 import codecs
-from lai import Client, Database, Document
+from lai import Client, Database, Document, Data
 
 client = Client(Database())
-filename = '/home/xleo/src/tools12/trunk/scripts/lai/data'
+filename = '/tmp/docs'
 
-with codecs.open(filename, 'r', encoding='latin1') as file:
+with codecs.open(filename, 'r', encoding='utf8') as file:
     lines = file.readlines()
     count = 0
-    for line in lines[1772:]:
-        if line != '':
-            data = line.strip()
-            doc = Document(data)
-            doc = client.save(doc)
-            if count % 25 == 0:
-                client.sync()
-            count += 1
-    client.sync()
+    for line in lines:
+        tokens = line.rsplit('#', 1)
+        content = tokens[0].strip()
+        if len(tokens) == 2:
+            help = tokens[1].strip()
+        else:
+            help = None
+        doc = Document(Data(content, help))
+        doc = client.save(doc)
+        if count % 50 == 0:
+            client.sync()
+        count += 1
+    #client.sync()
 
