@@ -1,33 +1,32 @@
 lai
 ===
 
-Es un programa de línea de comandos que permite guardar anotaciones y mantenerlas sincronizadas entre varias computadoras. La idea es guardarte comandos, shortcuts, snippets y en gral cualquier cosa que quieras tener a mano en la consola. También podés compartir documentos con otros usuarios::
+lai is a command line program to store notes and keep them synchronized between multiple computers. The idea is to keep your commands, shortcuts, snippets and anything you want to have on hand at the console. You can also share notes with others::
 
-    juan@compu1:~$ lai --add 'git fetch origin [remote-branch]:[new-local-branch]'
+Store a note::
 
-Luego, al buscar por 'git' (por defecto lai busca)::
+    $ lai --add 'grep -R <pattern> --include \*.txt <dir>'
 
-    juan@compu1:~$ lai git
-    1: git fetch origin [remote-branch]:[new-local-branch]
+Search::
 
-También podés traer el documento por su id::
+    $ lai grep
+    1: grep -R <pattern> --include \*.txt <dir>
 
-    juan@compu1:~$ lai --get 1
-    git fetch origin [remote-branch]:[new-local-branch]
+Share with others::
 
-Como lai trabaja en modo cliente-servidor podés tener varios clientes sincronizados contra un servidor central, todo mediante un simple sync::
+    $ lai --set-public 1
 
-    juan@compu1:~$ lai --sync
+Sync with server::
 
-Luego desde otro cliente::
+    $ lai --sync
 
-    juan@client2:~$ lai --sync
-    juan@client2:~$ lai git
-    1: git fetch origin [remote-branch]:[new-local-branch]
+Search in public notes::
 
-lai permite que guardes tus documentos como públicos o privados. Si compartís un servidor lai podés buscar entre los documentos públicos de otros usuarios y copiar a tu cuenta los que quieras::
+    $ lai --server-search grep
+    5015d7273042976dc5000230: egrep -w 'word1|word2' /path/to/file
+    5015d7363042976dc500031b: grep -i ps ~/.bash* | grep -v history
 
-    javier@client3:~$ lai --server-search git
-    500230da304297180d207d4b: git fetch origin [remote-branch]:[new-local-branch]
-    javier@client3:~$ lai --copy 500230da304297180d207d4b
+Copy from server::
+
+    $ lai --copy 5015d7273042976dc5000230
 
