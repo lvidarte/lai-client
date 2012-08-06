@@ -32,7 +32,7 @@ def add(*args):
     try:
         content = args[0].strip()
     except IndexError:
-        sys.exit('Argument CONTENT required')
+        content = sys.stdin.read().strip()
     try:
         help = args[1]
     except IndexError:
