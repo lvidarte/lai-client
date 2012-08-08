@@ -14,10 +14,10 @@ with codecs.open(filename, 'r', encoding='utf8') as file:
         tokens = line.rsplit('#', 1)
         content = tokens[0].strip()
         if len(tokens) == 2:
-            help = tokens[1].strip()
+            description = tokens[1].strip()
         else:
-            help = None
-        doc = Document(Data(content, help))
+            description = None
+        doc = Document(Data(content, description))
         doc = client.save(doc)
         if count % 50 == 0:
             client.sync()

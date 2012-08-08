@@ -55,8 +55,8 @@ class DBMongo(DBBase):
 
     def search(self, regex):
         try:
-            spec = {'$or': [{'data.content': {'$regex': regex, '$options': 'im'}},
-                            {'data.help'   : {'$regex': regex, '$options': 'im'}}]}
+            spec = {'$or': [{'data.content'    : {'$regex': regex, '$options': 'im'}},
+                            {'data.description': {'$regex': regex, '$options': 'im'}}]}
             fields = {'_id': 0}
             cur = self.db.docs.find(spec, fields)
         except Exception as e:

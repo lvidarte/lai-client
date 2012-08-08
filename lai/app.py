@@ -40,12 +40,12 @@ def _parse_args():
     # Search
     parser_search = subparsers.add_parser('search')
     parser_search.add_argument('regex', help='regular expression to perform the search')
-#   parser_search.add_argument('-l', '--limit', help='max of results', default=50)
-#   parser_search.add_argument('-c', '--content', action='store_true', help='search into data.content')
-#   parser_search.add_argument('-d', '--description', action='store_true', help='search into data.description')
+    #parser_search.add_argument('-l', '--limit', help='max of results', default=50)
+    #parser_search.add_argument('-c', '--content', action='store_true', help='search into data.content')
+    #parser_search.add_argument('-d', '--description', action='store_true', help='search into data.description')
     server_search = parser_search.add_argument_group('server search', 'options for server search')
     server_search.add_argument('-s', '--server', action='store_true', default=False, help='server search in public notes')
-#   server_search.add_argument('-u', '--user', nargs='?', help='search in specific user notes')
+    #server_search.add_argument('-u', '--user', nargs='?', help='search in specific user notes')
 
     # Add
     parser_add = subparsers.add_parser('add')
@@ -105,18 +105,18 @@ def search(args):
 def _print_search(rs, id_key):
     if rs:
         for doc in rs:
-            id      = str(getattr(doc, id_key))
-            content = doc.data.content
-            help    = doc.data.help
+            id = str(getattr(doc, id_key))
+            content     = doc.data.content
+            description = doc.data.description
             if colored:
                 s  = colored.green(id + ': ')
                 s += content.encode('utf8')
-                if help:
-                    s += colored.blue(' :' + help.encode('utf8'))
+                if description:
+                    s += colored.blue(' #' + description.encode('utf8'))
             else:
                 s = "%s: %s" % (id, content.encode('utf8'))
-                if help:
-                    s += ' :' + help.encode('utf8')
+                if description:
+                    s += ' #' + description.encode('utf8')
             print s
 
 def add(args):
@@ -144,8 +144,8 @@ def get(args):
         for doc in docs:
             if args.verbose:
                 s = "%s: %s" % (doc.id, doc.data.content)
-                if doc.data.help:
-                    s += ' :' + doc.data.help
+                if doc.data.description:
+                    s += ' #' + doc.data.description
             else:
                 s = doc.data.content
             print s.encode('utf8')
