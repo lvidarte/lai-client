@@ -2,6 +2,7 @@
 Release:    0.3.4
 Date:       In Progress
 
+ * Issue 40: La función para copiar un doc al portapapeles no funciona
  * Issue 39: Activar la función para mandar documentos a gist
 
 ------------------------------------------------------------------------------

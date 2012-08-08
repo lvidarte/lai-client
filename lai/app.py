@@ -219,8 +219,8 @@ def copy(args):
         if args.to_gist:
             html_url = client.send_to_gist(doc)
             print html_url
-        elif args.to_clip:
-            import pyperclip
+        elif args.to_clipboard:
+            from lai.lib import pyperclip
             if pyperclip.copy is not None:
                 pyperclip.copy(doc.data.content)
                 print "Copied to clipboard"
