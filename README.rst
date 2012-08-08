@@ -5,28 +5,28 @@ lai is a command line program to store notes and keep them synchronized between 
 
 Store a note::
 
-    $ lai --add 'grep -R <pattern> --include \*.txt <dir>'
+    $ lai add 'grep -R <pattern> --include \*.txt <dir>'
 
 Search::
 
-    $ lai grep
+    $ lai search grep
     1: grep -R <pattern> --include \*.txt <dir>
 
 Share with others::
 
-    $ lai --set-public 1
+    $ lai edit 1 --public
 
 Sync with server::
 
-    $ lai --sync
+    $ lai sync
 
 Search in public notes::
 
-    $ lai --server-search grep
+    $ lai search --server grep
     5015d7273042976dc5000230: egrep -w 'word1|word2' /path/to/file
     5015d7363042976dc500031b: grep -i ps ~/.bash* | grep -v history
 
 Copy from server::
 
-    $ lai --copy 5015d7273042976dc5000230
+    $ lai copy --server 5015d7273042976dc5000230
 

@@ -20,4 +20,10 @@ from lai.document import Document
 from lai.database import Database
 from lai.data import Data
 
-version = '0.3.2'
+prog = 'lai'
+version = '0.3.3'
+description = '''%s is a command line program to store notes
+and keep them synchronized between multiple computers.
+The idea is to keep your commands, shortcuts, snippets and
+anything you want to have on hand at the console.
+You can also share notes with others.''' % prog

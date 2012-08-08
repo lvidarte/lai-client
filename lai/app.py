@@ -14,8 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with lai-client. If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import argparse
 import sys
+import os
 import tempfile
 import codecs
 
@@ -25,109 +26,81 @@ except:
     colored = None
 
 from lai import Client, Database, Document, Data
+from lai import prog, version, description
 from lai.database import NotFoundError
 
 
-def add(*args):
-    try:
-        content = args[0].strip()
-    except IndexError:
-        content = sys.stdin.read().strip()
-    try:
-        help = args[1]
-    except IndexError:
-        help = None
-    doc = Document(Data(content, help))
-    doc = client.save(doc)
+def _parse_args():
+    version_ = '%s %s' % (prog, version)
+    parser = argparse.ArgumentParser(prog=prog, description=description)
+    parser.add_argument('-v', '--version',
+                        action='version', version=version_)
+    subparsers = parser.add_subparsers(dest='command')
 
-def get(*args):
-    try:
-        id = args[0]
-    except IndexError:
-        sys.exit('Argument ID required')
-    try:
-        doc = client.get(id)
-    except NotFoundError:
-        pass
+    # Search
+    parser_search = subparsers.add_parser('search')
+    parser_search.add_argument('regex', help='regular expression to perform the search')
+#   parser_search.add_argument('-l', '--limit', help='max of results', default=50)
+#   parser_search.add_argument('-c', '--content', action='store_true', help='search into data.content')
+#   parser_search.add_argument('-d', '--description', action='store_true', help='search into data.description')
+    server_search = parser_search.add_argument_group('server search', 'options for server search')
+    server_search.add_argument('-s', '--server', action='store_true', default=False, help='server search in public notes')
+#   server_search.add_argument('-u', '--user', nargs='?', help='search in specific user notes')
+
+    # Add
+    parser_add = subparsers.add_parser('add')
+    parser_add.add_argument('content', nargs='?', help='Text for the data.content field')
+    parser_add.add_argument('-d', '--description', nargs='?', help='Text for the data.description field')
+    group_add = parser_add.add_mutually_exclusive_group()
+    group_add.add_argument('-p', '--public', action='store_true', dest='public', help='Make the note public')
+    group_add.add_argument('-P', '--private', action='store_false', dest='public', help='Make the note private')
+
+    # Get
+    parser_get = subparsers.add_parser('get')
+    parser_get.add_argument('-v', '--verbose', action='store_true')
+    group_get = parser_get.add_mutually_exclusive_group()
+    group_get.add_argument('id', nargs='?')
+    group_get.add_argument('-a', '--all', action='store_true')
+
+    # Edit
+    parser_edit = subparsers.add_parser('edit')
+    parser_edit.add_argument('id')
+    parser_edit.add_argument('-c', '--content', nargs='?')
+    parser_edit.add_argument('-d', '--description', nargs='?')
+    parser_edit.add_argument('-e', '--editor', action='store_true')
+    group_edit = parser_edit.add_mutually_exclusive_group()
+    group_edit.add_argument('-p', '--public', action='store_true', dest='public')
+    group_edit.add_argument('-P', '--private', action='store_false', dest='public')
+
+    # Delete
+    parser_delete = subparsers.add_parser('delete')
+    parser_delete.add_argument('id')
+
+    # Sync
+    parser_sync = subparsers.add_parser('sync')
+    parser_sync.add_argument('-s', '--server', nargs='?')
+
+    # Copy
+    parser_copy = subparsers.add_parser('copy')
+    parser_copy.add_argument('id')
+    group_copy = parser_copy.add_mutually_exclusive_group()
+    group_copy.add_argument('-s', '--from-server', metavar='sid')
+    group_copy.add_argument('-g', '--to-gist', metavar='id')
+    group_copy.add_argument('-c', '--to-clipboard', metavar='id')
+
+    # Status
+    parser_status = subparsers.add_parser('status')
+
+    args = parser.parse_args()
+    return args
+
+def search(args):
+    if args.server:
+        rs = client.server_search(args.regex)
+        _print_search(rs, id_key='sid')
     else:
-        print doc.data.content
-
-def getall(*args):
-    docs = client.getall()
-    for doc in docs:
-        s = "%s: %s" % (doc.id, doc.data.content)
-        if doc.data.help:
-            s += ' :' + doc.data.help
-        print s.encode('utf8')
-
-def clip(*args):
-    try:
-        id = args[0]
-    except IndexError:
-        sys.exit('Argument ID required')
-    doc = client.get(id)
-    if doc.data:
-        import pyperclip
-        if pyperclip.copy is not None:
-            pyperclip.copy(doc.data)
-            print doc.data
-        else:
-            sys.exit('Can\'t copy the content to the clipboard. Do you have xclip installed?')
-
-def show(*args):
-    try:
-        id = args[0]
-    except IndexError:
-        sys.exit('Argument ID required')
-    try:
-        doc = client.get(id)
-    except NotFoundError:
-        pass
-    else:
-        for attr in Document.VALID_ATTRS:
-            value = getattr(doc, attr)
-            if type(value) == list:
-                value = ','.join(value)
-            print "%s: %s" % (attr, value)
-
-def edit(*args):
-    try:
-        id = args[0]
-        content = args[1].strip()
-    except IndexError:
-        sys.exit('Arguments ID and CONTENT required')
-    try:
-        doc = client.get(id)
-    except NotFoundError:
-        sys.exit('Document not found')
-    save = False
-    if content != '':
-        doc.data.content = content
-        save = True
-    if len(args) == 3:
-        doc.data.help = args[2].strip()
-        save = True
-    if save:
-        doc = client.save(doc)
-
-def delete(*args):
-    try:
-        doc = client.get(args[0])
-    except IndexError:
-        sys.exit('Argument ID required')
-    doc = client.delete(doc)
-
-def search(regex):
-    rs = client.search(regex)
-    _print_search(rs, id_key='id')
-
-def server_search(*args):
-    try:
-        regex = args[0]
-    except IndexError:
-        sys.exit('Argument REGEX required')
-    rs = client.server_search(regex)
-    _print_search(rs, id_key='sid')
+        rs = client.search(args.regex)
+        _print_search(rs, id_key='id')
 
 def _print_search(rs, id_key):
     if rs:
@@ -146,29 +119,63 @@ def _print_search(rs, id_key):
                     s += ' :' + help.encode('utf8')
             print s
 
-def copy(*args):
+def add(args):
+    if args.content is None:
+        args.content = sys.stdin.read().strip()
+    doc = Document(Data(args.content, args.description), public=args.public)
+    doc = client.save(doc)
+
+def get(args):
+    if args.id:
+        try:
+            doc = client.get(args.id)
+        except NotFoundError:
+            sys.exit(0)
+        if args.verbose:
+            for attr in Document.VALID_ATTRS:
+                value = getattr(doc, attr)
+                if type(value) == list:
+                    value = ','.join(value)
+                print "%s: %s" % (attr, value)
+        else:
+            print doc.data.content
+    elif args.all:
+        docs = client.getall()
+        for doc in docs:
+            if args.verbose:
+                s = "%s: %s" % (doc.id, doc.data.content)
+                if doc.data.help:
+                    s += ' :' + doc.data.help
+            else:
+                s = doc.data.content
+            print s.encode('utf8')
+
+def edit(args):
     try:
-        sid = args[0]
-    except IndexError:
-        sys.exit('Argument SID required')
-    from lai import config
-    doc = client.server_get(sid)
-    doc.user = config.USER
-    doc.sid  = None
-    doc.tid  = None
-    client.save(doc)
+        doc = client.get(args.id)
+    except NotFoundError:
+        sys.exit('Document not found')
+    if args.editor:
+        _editor(args)
+    else:
+        if args.content:
+            doc.data.content = args.content
+        if args.description:
+            doc.data.description = args.description
+        doc.public = args.public
+        doc = client.save(doc)
 
-def sync(*args):
-    client.sync()
-
-def editor(*args):
+def _editor(args):
     editor_cmd = os.getenv('EDITOR')
 
     if editor_cmd is None:
         sys.exit("Environment var EDITOR is unset")
 
-    if len(args):
-        doc = client.get(args[0])
+    if args.id:
+        try:
+            doc = client.get(args.id)
+        except NotFoundError:
+            sys.exit('Document not found')
     else:
         doc = Document()
 
@@ -186,22 +193,43 @@ def editor(*args):
 
     os.unlink(filename)
 
-def set_public(*args):
-    _set('public', True, *args)
-
-def unset_public(*args):
-    _set('public', False, *args)
-
-def _set(key, value, *args):
+def delete(args):
     try:
-        id = args[0]
-    except IndexError:
-        sys.exit('Argument ID required')
-    doc = client.get(id)
-    setattr(doc, key, value)
-    client.save(doc)
+        doc = client.get(args.id)
+    except NotFoundError:
+        sys.exit('Document not found')
+    doc = client.delete(doc)
 
-def status(*args):
+def sync(args):
+    client.sync()
+
+def copy(args):
+    if args.from_server:
+        from lai import config
+        doc = client.server_get(args.id)
+        doc.user = config.USER
+        doc.sid  = None
+        doc.tid  = None
+        client.save(doc)
+    else:
+        try:
+            doc = client.get(args.id)
+        except NotFoundError:
+            sys.exit('Document not found')
+        if args.gist_id:
+            html_url = client.send_to_gist(doc)
+            print html_url
+        elif args.to_clip:
+            import pyperclip
+            if pyperclip.copy is not None:
+                pyperclip.copy(doc.data.content)
+                print "Copied to clipboard"
+            else:
+                msg  = 'Can\'t copy the content to the clipboard. '
+                msg += 'Do you have xclip installed?'
+                sys.exit(msg)
+
+def status(args):
     docs = client.status()
     def print_docs(docs):
         if docs is not None:
@@ -221,89 +249,7 @@ def status(*args):
     print fmt.format('To commit')
     print_docs(docs['to_commit'])
 
-def send_to_gist(*args):
-    try:
-        id = args[0]
-    except IndexError:
-        sys.exit('Argument ID required')
-    doc = client.get(id)
-    html_url = client.send_to_gist(doc)
-    sys.stderr.write(html_url + '\n')
-
-def print_short_help():
-    out  = "Usage: lai REGEX\n"
-    out += "       lai [--sync | --status]\n"
-    out += "       lai [--add CONTENT [HELP] | --edit ID CONTENT [HELP] | --editor [ID]]\n"
-    out += "       lai [--get ID | --clip ID | --show ID | --del ID | --getall]\n"
-    out += "       lai [--set-public ID | --unset-public ID]\n"
-    out += "       lai [--server-search REGEX | --copy SID]\n"
-    out += "       lai [--gist ID]\n"
-    out += "       lai [--help | --version]"
-    print out
-
-def print_long_help():
-    out  = "Usage: lai REGEX                     Performs a regex search\n"
-    out += "       lai --add CONTENT [HELP]      Add new doc\n"
-    out += "       lai --edit ID CONTENT [HELP]  Edit inline a doc\n"
-    out += "       lai --editor [ID]             Add or edit with default text editor\n"
-    out += "       lai --get ID                  Get a specific doc\n"
-    out += "       lai --clip ID                 Show and copy to clipboard a specific doc\n"
-    out += "       lai --getall                  Get all docs\n"
-    out += "       lai --del ID                  Delete doc\n"
-    out += "       lai --gist ID                 Send doc to Github Gist\n"
-    out += "       lai --set-public ID           Set public a doc\n"
-    out += "       lai --unset-public ID         Unset public a doc\n"
-    out += "       lai --server-search REGEX     Performs a regex search in server\n"
-    out += "       lai --copy SID                Copy a public doc from server\n"
-    out += "       lai --show ID                 Show all metadata from a specific doc\n"
-    out += "       lai --status                  Show docs to sync\n"
-    out += "       lai --sync                    Sync changes with server\n"
-    out += "       lai --help                    Show this help\n"
-    out += "       lai --version                 Show program version"
-    print out
-
-def print_version():
-    from lai import version
-    print "lai-client", version
-
-
 if __name__ == '__main__':
+    args = _parse_args()
     client = Client(Database())
-
-    METHODS = {
-        '--get'          : get,
-        '--getall'       : getall,
-        '--clip'         : clip,
-        '--show'         : show,
-        '--add'          : add,
-        '--edit'         : edit,
-        '--del'          : delete,
-        '--sync'         : sync,
-        '--editor'       : editor,
-        '--set-public'   : set_public,
-        '--unset-public' : unset_public,
-        '--server-search': server_search,
-        '--copy'         : copy,
-        '--status'       : status,
-        '--gist'         : send_to_gist,
-        '--help'         : print_long_help,
-        '--version'      : print_version,
-    }
-
-    if len(sys.argv) > 1:
-        rs = None
-        if sys.argv[1].startswith('--'):
-            try:
-                fn = METHODS[sys.argv[1]]
-            except KeyError:
-                sys.exit('Invalid argument')
-            else:
-                if len(sys.argv) > 2:
-                    rs = fn(*sys.argv[2:])
-                else:
-                    rs = fn()
-        else:
-            search(sys.argv[1])
-    else:
-        print_short_help()
-
+    locals()[args.command](args)
