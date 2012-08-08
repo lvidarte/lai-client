@@ -27,8 +27,10 @@ class Gist:
     def create(self, public, doc):
         try:
             user = self._g.get_user()
-            file_name = "%s.sh" % doc.id
-            created_gist = user.create_gist(public, {file_name: InputFileContent(doc.data)}, 'created from lai')
+            file_name = "lai-%s" % doc.id
+            content = {file_name: InputFileContent(doc.data.content)}
+            description = '' if doc.data.description is None else doc.data.description
+            created_gist = user.create_gist(public, content, description)
             return created_gist.html_url
         except Exception as e:
             raise GistException(e)

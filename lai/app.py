@@ -84,9 +84,9 @@ def _parse_args():
     parser_copy = subparsers.add_parser('copy')
     parser_copy.add_argument('id')
     group_copy = parser_copy.add_mutually_exclusive_group()
-    group_copy.add_argument('-s', '--from-server', metavar='sid')
-    group_copy.add_argument('-g', '--to-gist', metavar='id')
-    group_copy.add_argument('-c', '--to-clipboard', metavar='id')
+    group_copy.add_argument('-s', '--from-server', action='store_true')
+    group_copy.add_argument('-g', '--to-gist', action='store_true')
+    group_copy.add_argument('-c', '--to-clipboard', action='store_true')
 
     # Status
     parser_status = subparsers.add_parser('status')
@@ -216,7 +216,7 @@ def copy(args):
             doc = client.get(args.id)
         except NotFoundError:
             sys.exit('Document not found')
-        if args.gist_id:
+        if args.to_gist:
             html_url = client.send_to_gist(doc)
             print html_url
         elif args.to_clip:

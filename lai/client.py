@@ -21,9 +21,9 @@ import base64
 
 from lai import config
 from lai.document import Document
-from lai.database import DatabaseException, UPDATE_PROCESS, COMMIT_PROCESS
+from lai.database import UPDATE_PROCESS, COMMIT_PROCESS
 from lai.lib import crypto
-#from lai.lib import gist
+from lai.lib import gist
 
 
 CLIENT_PRV_KEY = open(config.CLIENT_PRV_KEY_PATH, 'r').read()
@@ -136,9 +136,9 @@ class Client:
         res = urllib2.urlopen(req)
         return res.read()
 
-#   def send_to_gist(self, doc):
-#       g = gist.Gist(config.GITHUB_USER, config.GITHUB_PASSWORD)
-#       return g.create(True, doc)
+    def send_to_gist(self, doc):
+        g = gist.Gist(config.GITHUB_USER, config.GITHUB_PASSWORD)
+        return g.create(True, doc)
 
 if __name__ == '__main__':
     from lai.database import Database
