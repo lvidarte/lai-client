@@ -30,7 +30,11 @@ from lai import prog, version, description
 from lai.database import NotFoundError
 
 
+COMMANDS = ['search', 'add', 'get', 'edit', 'delete', 'sync', 'copy', 'status']
+
+
 def _parse_args():
+
     version_ = '%s %s' % (prog, version)
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument('-v', '--version',
@@ -90,6 +94,11 @@ def _parse_args():
 
     # Status
     parser_status = subparsers.add_parser('status')
+
+    # Search command by default!
+    if len(sys.argv) > 1 and sys.argv[1] not in COMMANDS:
+        #print "Using search command by default"
+        sys.argv[1:1] = ['search']
 
     args = parser.parse_args()
     return args
