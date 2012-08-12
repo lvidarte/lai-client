@@ -30,7 +30,9 @@ from lai import prog, version, description
 from lai.database import NotFoundError
 
 
-COMMANDS = ['search', 'add', 'get', 'edit', 'delete', 'sync', 'copy', 'status']
+COMMANDS = ('search', 'add', 'get', 'edit',
+            'delete', 'sync', 'copy', 'status',
+            '-h', '--help', '-v', '--version')
 
 
 def _parse_args():
