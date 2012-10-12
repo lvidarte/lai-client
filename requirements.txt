@@ -1,4 +1,4 @@
-PyGithub==1.2
+PyGithub==1.8.0
 clint==0.3.1
 mockito==0.5.1
 pymongo==2.2

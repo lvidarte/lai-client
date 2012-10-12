@@ -16,23 +16,17 @@
 
 from github import Github, InputFileContent
 
-class GistException(Exception):
-    pass
-
 class Gist:
 
     def __init__(self, username, password):
         self._g = Github(username, password)
 
     def create(self, public, doc):
-        try:
-            user = self._g.get_user()
-            file_name = "lai-%s" % doc.id
-            content = {file_name: InputFileContent(doc.data.content)}
-            description = '' if doc.data.description is None else doc.data.description
-            created_gist = user.create_gist(public, content, description)
-            return created_gist.html_url
-        except Exception as e:
-            raise GistException(e)
+        user = self._g.get_user()
+        file_name = "lai-%s" % doc.id
+        content = {file_name: InputFileContent(doc.data.content)}
+        description = '' if doc.data.description is None else doc.data.description
+        created_gist = user.create_gist(public, content, description)
+        return created_gist.html_url
 
 
