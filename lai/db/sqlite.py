@@ -14,84 +14,130 @@
 # You should have received a copy of the GNU General Public License
 # along with lai-client. If not, see <http://www.gnu.org/licenses/>.
 
+import os.path
 import sqlite3 as sqlite
+import json
+
 from lai.db.base import DBBase
-from lai.database import DatabaseException, UPDATE_PROCESS, COMMIT_PROCESS
+from lai.database import UPDATE_PROCESS, COMMIT_PROCESS
+from lai.database import DatabaseException, NotFoundError
 from lai import Document
+
 
 class DBSqlite(DBBase):
 
     def connect(self):
-        '''Connect to the database'''
+        database_exists = os.path.exists(self.config['NAME'])
         try:
             self.connection = sqlite.connect(self.config['NAME'])
-            self.connection.row_factory = sqlite.Row
+            self.connection.row_factory = self._dict_factory
             self.cursor = self.connection.cursor()
-
-            if not self._table_exists():
+            if not database_exists:
                 self._initialize_database()
         except Exception as e:
             raise DatabaseException(e)
 
-
-    def _table_exists(self, table=None):
-        '''Verify if the table was created'''
-
-        if table is None:
-            table = self.config['TABLE']
-        self.cursor.execute('''SELECT name
-                               FROM sqlite_master
-                               WHERE type='table'
-                               AND name='%s'
-                            ''' % table)
-        return (self.cursor.fetchone() is not None)
+    def _dict_factory(self, cursor, row):
+        '''Factory to return row as dict,
+           converting data field into dict too'''
+        d = {}
+        for i, col in enumerate(cursor.description):
+            key = col[0]
+            value = row[i]
+            if key == 'data':
+                value = json.loads(value)
+            d[key] = value
+        return d
 
     def _initialize_database(self):
         '''Create the table if doesn't exists'''
-        self.cursor.execute('''CREATE TABLE %s
+        self.cursor.execute('''CREATE TABLE docs
                                (id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 sid      TEXT,
                                 tid      INTEGER DEFAULT 0,
                                 data     TEXT,
-                                keys     TEXT,
-                                users    TEXT,
-                                usersdel TEXT,
-                                synched  INTEGER DEFAULT 0)
-                            ''' % self.config['TABLE'])
-
-    def save(self, doc, synched=False):
-
-        if doc.id is None:
-            return self._create(doc, synched)
-        else:
-            return self._update(doc, synched)
-
-    def update(self, doc, type=None):
-
-        if type is None or type == UPDATE_PROCESS:
-            id = self._exists('sid', doc.sid)
-            doc.id = id
-            synched = True if type == UPDATE_PROCESS else False
-            self.save(doc, synched)
-        elif COMMIT_PROCESS:
-            self._update_transaction(doc, synched=True)
+                                user     TEXT,
+                                public   INTEGER DEFAULT 0,
+                                synced   INTEGER DEFAULT 0)
+                            ''')
+        self.cursor.execute('''CREATE TABLE internals
+                               (id   TEXT UNIQUE,
+                                data TEXT)
+                            ''')
 
     def get(self, id):
+        try:
+            self.cursor.execute('SELECT * FROM docs WHERE id=?', (id,))
+            row = self.cursor.fetchone()
+        except Exception as e:
+            raise DatabaseException(e)
+        if row:
+            return Document(**row)
+        raise NotFoundError('id %s not found' % id)
+
+    def getall(self):
+        try:
+            query = '''SELECT * FROM docs
+                       WHERE data is not null
+                       ORDER BY tid DESC'''
+            self.cursor.execute(query)
+            rows = self.cursor.fetchall()
+        except Exception as e:
+            raise DatabaseException(e)
+        return [Document(**row) for row in rows]
+
+    def save(self, doc):
+        if doc.id:
+            return self.update(doc)
+        else:
+            return self.insert(doc)
+
+    def insert(self, doc, synced=False):
+        doc.synced = synced
+        query = '''INSERT INTO docs
+                   (tid, sid, data, user, public, synced)
+                   VALUES (?, ?, ?, ?, ?, ?)'''
+        args = (doc.tid, doc.sid, json.dumps(doc.data),
+                doc.user, doc.public, doc.synced)
+        try:
+            self.cursor.execute(query, args)
+            self.connection.commit()
+            doc.id = self.cursor.lastrowid
+        except Exception as e:
+            raise DatabaseException(e)
+        return doc
+
+    def update(self, doc, type=None):
+        if type is None:
+            doc.synced = False
+            query = """UPDATE docs SET (data=?, user=?, public=?, synced=?)
+                       WHERE id=?"""
+            args = (json.dumps(doc.data), doc.user, doc.public, doc.synced)
+
+        elif type == UPDATE_PROCESS:
+            self.cursor.execute("SELECT id FROM docs WHERE sid=?", (doc.sid,))
+            if self.cursor.fetchone() is None:
+                return self.insert(doc, synced=True)
+            doc.synced = True
+            query = """UPDATE docs
+                       SET (tid=?, data=?, user=?, public=?, synced=?)
+                       WHERE sid=?"""
+            args = (doc.tid, json.dumps(doc.data), doc.user,
+                    doc.public, doc.synced, doc.sid)
+
+        elif type == COMMIT_PROCESS:
+            doc.synced = True
+            query = "UPDATE docs SET (sid=?, tid=?, synced=?) WHERE id=?"
+            args = (doc.sid, doc.tid, doc.synced, doc.id)
+        else:
+            raise DatabaseException('Incorrect update type')
 
         try:
-            args = (self.config['TABLE'], id)
-            self.cursor.execute('''SELECT * FROM %s WHERE id = %s''' % args)
-            row = self.cursor.fetchone()
-            if row is not None:
-                doc = Document(**row)
-                doc.users    = row[5].split(',')
-                doc.usersdel = row[6].split(',')
-            else:
-                doc = None
+            self.cursor.execute(query, args)
+            assert self.cursor.rowcount == 1
         except Exception as e:
-            DatabaseException(e)
-        else:
-            return doc
+            raise DatabaseException(e)
+        return doc
 
     def delete(self, doc):
         try:
@@ -163,40 +209,6 @@ class DBSqlite(DBBase):
             doc = Document(**dfc)
             docs.append(doc)
         return docs
-
-    def getall(self):
-
-        docs = []
-        try:
-            sql_query = '''SELECT * FROM %s ORDER BY id ''' % self.config['TABLE']
-            self.cursor.execute(sql_query)
-            rows = self.cursor.fetchall()
-            for row in rows:
-                doc = Document(**row)
-                docs.append(doc)
-        except Exception as e:
-            raise DatabaseException(e)
-        else:
-            return docs
-
-    def _create(self, doc, synched=False):
-
-        sql_insert = '''INSERT INTO %s
-           (tid, sid, data, keys, users, usersdel, synched)
-           VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''' % self.config['TABLE']
-
-        try:
-            args = (doc.tid, doc.sid, doc.data, doc.keys,
-                    ','.join(doc.users), ','.join(doc.usersdel), synched)
-
-            rs = self.cursor.execute(sql_insert, args)
-            self.connection.commit()
-            doc.id = self.cursor.lastrowid
-        except Exception as e:
-            raise DatabaseException(e)
-        else:
-            return doc
 
     def _update(self, doc, synched=False):
 

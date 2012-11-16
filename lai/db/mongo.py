@@ -139,15 +139,14 @@ class DBMongo(DBBase):
             doc.synced = True
             set = {'sid': doc.sid, 'tid': doc.tid, 'synced': doc.synced}
         else:
-            raise DatabaseException('incorrect type')
+            raise DatabaseException('Incorrect update type')
 
         try:
             rs = self.db.docs.update({pk: id}, {'$set': set}, safe=True)
             assert rs['n'] == 1
         except Exception as e:
             raise DatabaseException(e)
-        else:
-            return doc
+        return doc
 
     def delete(self, doc):
         if doc.id is None:
