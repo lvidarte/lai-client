@@ -46,6 +46,8 @@ class DBSqlite(DBBase):
             value = row[i]
             if key == 'data':
                 value = json.loads(value)
+            if key in ('public', 'synced'):
+                value = bool(value)
             d[key] = value
         return d
 
@@ -60,10 +62,19 @@ class DBSqlite(DBBase):
                                 public   INTEGER DEFAULT 0,
                                 synced   INTEGER DEFAULT 0)
                             ''')
-        self.cursor.execute('''CREATE TABLE internals
+        self.cursor.execute('''CREATE TABLE internal
                                (id   TEXT UNIQUE,
                                 data TEXT)
                             ''')
+
+    def search(self, regex):
+        try:
+            query = "SELECT * FROM docs WHERE data REGEXP ?"
+            self.cursor.execute(query, (regex,))
+            rows = self.cursor.fetchall()
+        except Exception as e:
+            raise DatabaseException(e)
+        return [Document(**row) for row in rows]
 
     def get(self, id):
         try:
@@ -98,7 +109,7 @@ class DBSqlite(DBBase):
                    (tid, sid, data, user, public, synced)
                    VALUES (?, ?, ?, ?, ?, ?)'''
         args = (doc.tid, doc.sid, json.dumps(doc.data),
-                doc.user, doc.public, doc.synced)
+                doc.user, int(doc.public), int(doc.synced))
         try:
             self.cursor.execute(query, args)
             self.connection.commit()
@@ -110,9 +121,10 @@ class DBSqlite(DBBase):
     def update(self, doc, type=None):
         if type is None:
             doc.synced = False
-            query = """UPDATE docs SET (data=?, user=?, public=?, synced=?)
+            query = """UPDATE docs SET data=?, user=?, public=?, synced=?
                        WHERE id=?"""
-            args = (json.dumps(doc.data), doc.user, doc.public, doc.synced)
+            args = (json.dumps(doc.data), doc.user, int(doc.public),
+                    int(doc.synced), doc.id)
 
         elif type == UPDATE_PROCESS:
             self.cursor.execute("SELECT id FROM docs WHERE sid=?", (doc.sid,))
@@ -120,158 +132,101 @@ class DBSqlite(DBBase):
                 return self.insert(doc, synced=True)
             doc.synced = True
             query = """UPDATE docs
-                       SET (tid=?, data=?, user=?, public=?, synced=?)
+                       SET tid=?, data=?, user=?, public=?, synced=?
                        WHERE sid=?"""
             args = (doc.tid, json.dumps(doc.data), doc.user,
-                    doc.public, doc.synced, doc.sid)
+                    int(doc.public), int(doc.synced), doc.sid)
 
         elif type == COMMIT_PROCESS:
             doc.synced = True
-            query = "UPDATE docs SET (sid=?, tid=?, synced=?) WHERE id=?"
-            args = (doc.sid, doc.tid, doc.synced, doc.id)
+            query = "UPDATE docs SET sid=?, tid=?, synced=? WHERE id=?"
+            args = (doc.sid, doc.tid, int(doc.synced), doc.id)
         else:
             raise DatabaseException('Incorrect update type')
 
         try:
             self.cursor.execute(query, args)
+            self.connection.commit()
             assert self.cursor.rowcount == 1
         except Exception as e:
             raise DatabaseException(e)
         return doc
 
     def delete(self, doc):
+        if doc.id is None:
+            raise DatabaseException('Document does not have id')
+        if doc.sid is None:
+            try:
+                self.cursor.execute('DELETE FROM docs WHERE id=?', (doc.id))
+                self.connection.commit()
+                assert self.cursor.rowcount == 1
+            except Exception as e:
+                raise DatabaseException(e)
+            return None
+        doc.data = None
+        return self.update(doc)
+
+    def save_last_sync(self, process, ids):
         try:
-            rc = self.connection.execute('''UPDATE %s
-                                          SET data=NULL, keys=NULL, synched=0
-                                          WHERE id = %s''' % (self.config['TABLE'], doc.id))
-            self.connection.commit()
+            self.cursor.execute("""SELECT data FROM internal
+                                   WHERE id='last_sync'""")
+            row = self.cursor.fetchone()
+            if row:
+                data = row['data']
+                data[process] = ids
+            else:
+                data = {process: ids}
+            args = (json.dumps(data),)
+            self.cursor.execute("""UPDATE internal SET data=?
+                                   WHERE id='last_sync'""", args)
         except Exception as e:
-            DatabaseException(e)
-        else:
-            return True
+            raise DatabaseException(e)
 
-    def search(self, search_text):
-
-        docs = []
+    def get_docs_to_commit(self):
         try:
-            if (search_text is not None) and (not search_text == ''):
-                self.cursor.execute('''SELECT * FROM %s
-                                       WHERE keys LIKE '%s' ''' % (self.config['TABLE'],
-                                                                   '%' + search_text + '%'))
-                rows = self.cursor.fetchall()
-                for row in rows:
-                    doc = Document(**row)
-                    doc.users    = row[5].split(',')
-                    doc.usersdel = row[6].split(',')
-                    docs.append(doc)
-        except Exception as e:
-            DatabaseException(e)
-        else:
-            return docs
-
-    def get_docs_for_commit(self):
-
-        docs = []
-        try:
-            self.cursor.execute('''SELECT * FROM %s
-                                   WHERE synched = 0 ''' % (self.config['TABLE']))
+            self.cursor.execute('SELECT * FROM docs WHERE synched=0')
             rows = self.cursor.fetchall()
-            for row in rows:
-                doc = Document(**row)
-                doc.users    = row[5].split(',')
-                doc.usersdel = row[6].split(',')
-                docs.append(doc.to_dict())
         except Exception as e:
-            DatabaseException(e)
-        else:
-            return docs
+            raise DatabaseException(e)
+        return rows
 
     def get_last_tid(self):
-
         try:
-            self.cursor.execute('''SELECT tid
-                                   FROM %s
-                                   ORDER BY tid DESC''' % (self.config['TABLE']))
-
+            self.cursor.execute('SELECT tid FROM docs ORDER BY tid DESC')
             row = self.cursor.fetchone()
         except Exception as e:
             raise DatabaseException(e)
-        else:
-            if row is not None:
-                return row[0]
-            else:
-                return 0
+        if row:
+            return row['tid']
+        return 0
 
     def status(self):
-        docs = []
-        dfcs = self.get_docs_for_commit()
-        for dfc in dfcs:
-            doc = Document(**dfc)
-            docs.append(doc)
+        docs = {'updated'  : [],
+                'committed': [],
+                'to_commit': []}
+
+        self.cursor.execute("""SELECT data FROM internal
+                               WHERE id='last_sync'""")
+        row = self.cursor.fetchone()
+        if row:
+            data = json.loads(row['data'])
+        else:
+            data = {}
+
+        if 'update' in data:
+            for id in data['update']:
+                docs['updated'].append(self.get(id))
+
+        if 'commit' in data:
+            for id in data['commit']:
+                docs['committed'].append(self.get(id))
+
+        to_commit = self.get_docs_to_commit()
+        for row in to_commit:
+            doc = Document(**row)
+            docs['to_commit'].append(doc)
         return docs
-
-    def _update(self, doc, synched=False):
-
-        sql_update = '''UPDATE %s
-                        SET sid      = ?,
-                            tid      = ?,
-                            data     = ?,
-                            keys     = ?,
-                            users    = ?,
-                            usersdel = ?,
-                            synched  = ?
-                        WHERE id = %d
-                     ''' % (self.config['TABLE'], doc.id)
-        try:
-            args =  (doc.sid, doc.tid, doc.data, doc.keys,
-                    ','.join(doc.users), ','.join(doc.usersdel), synched)
-            rs = self.cursor.execute(sql_update, args)
-            self.connection.commit()
-        except Exception as e:
-            raise DatabaseException(e)
-        else:
-            return doc
-
-    def _update_transaction(self, doc, synched=False):
-
-        sql_update = '''UPDATE %s
-                        SET sid      = ?,
-                            tid      = ?,
-                            synched  = ?
-                        WHERE id = %d
-                     ''' % (self.config['TABLE'], doc.id)
-        try:
-            args = (doc.sid, doc.tid, synched)
-            rs = self.cursor.execute(sql_update, args)
-            self.connection.commit()
-        except Exception as e:
-            raise DatabaseException(e)
-        else:
-            return doc
-
-    def _exists(self, key='id', value=None):
-
-        if value:
-            try:
-                self.cursor.execute('''SELECT id FROM %s
-                                   WHERE %s = ?''' % (self.config['TABLE'], key),
-                                   (value,))
-                row = self.cursor.fetchone()
-            except Exception as e:
-                DatabaseException(e)
-            else:
-                if row is not None:
-                    return row['id']
-        else:
-            return False
-
-    def _create_doc(self, row):
-        pass
-
-    def docs_count(self):
-
-        self.cursor.execute("SELECT COUNT(*) AS COUNT FROM %s" % self.config['TABLE'])
-        return self.cursor.fetchone()[0]
 
     def __str__(self):
         return "%s://%s" % ('sqlite', self.config['NAME'])
+

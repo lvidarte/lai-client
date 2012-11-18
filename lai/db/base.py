@@ -22,8 +22,8 @@ class DBBase(object):
     def connect(self):
         raise NotImplementedError('connect not implemented')
 
-    def get_last_tid(self):
-        raise NotImplementedError('get_last_tid not implemented')
+    def search(self, regex):
+        raise NotImplementedError('search not implemented')
 
     def get(self, doc):
         raise NotImplementedError('get not implemented')
@@ -31,11 +31,17 @@ class DBBase(object):
     def save(self, doc):
         raise NotImplementedError('save not implemented')
 
-    def update(self, doc):
-        raise NotImplementedError('save not implemented')
+    def delete(self, doc):
+        raise NotImplementedError('delete not implemented')
 
-    def search(self, regex):
-        raise NotImplementedError('search not implemented')
+    def save_last_sync(self):
+        raise NotImplementedError('save_last_sync not implemented')
+
+    def get_docs_to_commit(self):
+        raise NotImplementedError('get_docs_to_commit not implemented')
+
+    def get_last_tid(self):
+        raise NotImplementedError('get_last_tid not implemented')
 
     def status(self):
         raise NotImplementedError('status not implemented')

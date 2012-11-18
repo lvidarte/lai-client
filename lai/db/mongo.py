@@ -32,17 +32,6 @@ class DBMongo(DBBase):
         except AutoReconnect:
             raise DatabaseException("It's not possible connect to the database")
 
-    def get_last_tid(self):
-        try:
-            spec = {'tid': {'$gt': 0}}
-            sort = [('tid', -1)]
-            row = self.db.docs.find_one(spec, sort=sort)
-        except Exception as e:
-            raise DatabaseException(e)
-        if row:
-            return row['tid']
-        return 0
-
     def get_next_id(self):
         try:
             query = {'_id': 'last_id'}
@@ -62,27 +51,6 @@ class DBMongo(DBBase):
         except Exception as e:
             raise DatabaseException(e)
         return [Document(**row) for row in cur]
-
-    def status(self):
-        docs = {'updated'  : [],
-                'committed': [],
-                'to_commit': []}
-
-        row = self.db.internal.find_one({'_id': 'last_sync'})
-
-        if row and 'update' in row:
-            for id in row['update']:
-                docs['updated'].append(self.get(id))
-
-        if row and 'commit' in row:
-            for id in row['commit']:
-                docs['committed'].append(self.get(id))
-
-        to_commit =  self.get_docs_to_commit()
-        for row in to_commit:
-            doc = Document(**row)
-            docs['to_commit'].append(doc)
-        return docs
 
     def get(self, id):
         try:
@@ -152,10 +120,13 @@ class DBMongo(DBBase):
         if doc.id is None:
             raise DatabaseException('Document does not have id')
         if doc.sid is None:
-            self.db.docs.remove({'id': doc.id})
+            try:
+                rs = self.db.docs.remove({'id': doc.id}, safe=True)
+                assert rs['n'] == 1
+            except Exception as e:
+                raise DatabaseException(e)
             return None
         doc.data = None
-        doc.synced = False
         return self.update(doc)
 
     def save_last_sync(self, process, ids):
@@ -174,6 +145,38 @@ class DBMongo(DBBase):
         except Exception as e:
             raise DatabaseException(e)
         return list(cur)
+
+    def get_last_tid(self):
+        try:
+            spec = {'tid': {'$gt': 0}}
+            sort = [('tid', -1)]
+            row = self.db.docs.find_one(spec, sort=sort)
+        except Exception as e:
+            raise DatabaseException(e)
+        if row:
+            return row['tid']
+        return 0
+
+    def status(self):
+        docs = {'updated'  : [],
+                'committed': [],
+                'to_commit': []}
+
+        row = self.db.internal.find_one({'_id': 'last_sync'})
+
+        if row and 'update' in row:
+            for id in row['update']:
+                docs['updated'].append(self.get(id))
+
+        if row and 'commit' in row:
+            for id in row['commit']:
+                docs['committed'].append(self.get(id))
+
+        to_commit =  self.get_docs_to_commit()
+        for row in to_commit:
+            doc = Document(**row)
+            docs['to_commit'].append(doc)
+        return docs
 
     def __str__(self):
         return "%s://%s:%s/%s" % (self.config['ENGINE'],
