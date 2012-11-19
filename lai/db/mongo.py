@@ -52,9 +52,12 @@ class DBMongo(DBBase):
             raise DatabaseException(e)
         return [Document(**row) for row in cur]
 
-    def get(self, id):
+    def get(self, id, deleted=False):
         try:
-            spec = {'id': int(id), 'data': {'$exists': 1}}
+            if deleted:
+                spec = {'id': int(id)}
+            else:
+                spec = {'id': int(id), 'data': {'$exists': 1}}
             fields = {'_id': 0}
             row = self.db.docs.find_one(spec, fields)
         except Exception as e:
@@ -166,11 +169,11 @@ class DBMongo(DBBase):
 
         if row and 'update' in row:
             for id in row['update']:
-                docs['updated'].append(self.get(id))
+                docs['updated'].append(self.get(id, deleted=True))
 
         if row and 'commit' in row:
             for id in row['commit']:
-                docs['committed'].append(self.get(id))
+                docs['committed'].append(self.get(id, deleted=True))
 
         to_commit =  self.get_docs_to_commit()
         for row in to_commit:

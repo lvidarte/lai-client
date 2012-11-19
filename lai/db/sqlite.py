@@ -87,10 +87,13 @@ class DBSqlite(DBBase):
             raise DatabaseException(e)
         return [Document(**row) for row in rows]
 
-    def get(self, id):
+    def get(self, id, deleted=False):
         try:
-            self.cursor.execute('''SELECT * FROM docs 
-                                   WHERE id=? AND data IS NOT NULL''', (id,))
+            if deleted:
+                query = 'SELECT * FROM docs WHERE id=?'
+            else:
+                query = 'SELECT * FROM docs WHERE id=? AND data IS NOT NULL'
+            self.cursor.execute(query, (id,))
             row = self.cursor.fetchone()
         except Exception as e:
             raise DatabaseException(e)
@@ -234,11 +237,11 @@ class DBSqlite(DBBase):
 
         if 'update' in data:
             for id in data['update']:
-                docs['updated'].append(self.get(id))
+                docs['updated'].append(self.get(id, deleted=True))
 
         if 'commit' in data:
             for id in data['commit']:
-                docs['committed'].append(self.get(id))
+                docs['committed'].append(self.get(id, deleted=True))
 
         to_commit = self.get_docs_to_commit()
         for row in to_commit:
