@@ -17,6 +17,7 @@
 import os.path
 import sqlite3 as sqlite
 import json
+import re
 
 from lai.db.base import DBBase
 from lai.database import UPDATE_PROCESS, COMMIT_PROCESS
@@ -31,6 +32,7 @@ class DBSqlite(DBBase):
         try:
             self.connection = sqlite.connect(self.config['NAME'])
             self.connection.row_factory = self._dict_factory
+            self.connection.create_function('REGEXP', 2, self._regexp)
             self.cursor = self.connection.cursor()
             if not database_exists:
                 self._initialize_database()
@@ -44,12 +46,20 @@ class DBSqlite(DBBase):
         for i, col in enumerate(cursor.description):
             key = col[0]
             value = row[i]
-            if key == 'data':
+            if key == 'data' and value:
                 value = json.loads(value)
             if key in ('public', 'synced'):
                 value = bool(value)
             d[key] = value
         return d
+
+    def _regexp(self, expr, data):
+        regexp = re.compile(expr)
+        data_dict = json.loads(data)
+        content = data_dict['content']
+        description = data_dict['description'] or ''
+        return regexp.search(content) is not None or \
+               regexp.search(description) is not None
 
     def _initialize_database(self):
         '''Create the table if doesn't exists'''
@@ -69,7 +79,8 @@ class DBSqlite(DBBase):
 
     def search(self, regex):
         try:
-            query = "SELECT * FROM docs WHERE data REGEXP ?"
+            query = '''SELECT * FROM docs
+                       WHERE data IS NOT NULL AND data REGEXP ?'''
             self.cursor.execute(query, (regex,))
             rows = self.cursor.fetchall()
         except Exception as e:
@@ -78,7 +89,8 @@ class DBSqlite(DBBase):
 
     def get(self, id):
         try:
-            self.cursor.execute('SELECT * FROM docs WHERE id=?', (id,))
+            self.cursor.execute('''SELECT * FROM docs 
+                                   WHERE id=? AND data IS NOT NULL''', (id,))
             row = self.cursor.fetchone()
         except Exception as e:
             raise DatabaseException(e)
@@ -89,7 +101,7 @@ class DBSqlite(DBBase):
     def getall(self):
         try:
             query = '''SELECT * FROM docs
-                       WHERE data is not null
+                       WHERE data IS NOT NULL
                        ORDER BY tid DESC'''
             self.cursor.execute(query)
             rows = self.cursor.fetchall()
@@ -119,12 +131,15 @@ class DBSqlite(DBBase):
         return doc
 
     def update(self, doc, type=None):
+        data = doc.data
+        if data is not None:
+            data = json.dumps(doc.data)
+
         if type is None:
             doc.synced = False
             query = """UPDATE docs SET data=?, user=?, public=?, synced=?
                        WHERE id=?"""
-            args = (json.dumps(doc.data), doc.user, int(doc.public),
-                    int(doc.synced), doc.id)
+            args = (data, doc.user, int(doc.public), int(doc.synced), doc.id)
 
         elif type == UPDATE_PROCESS:
             self.cursor.execute("SELECT id FROM docs WHERE sid=?", (doc.sid,))
@@ -134,7 +149,7 @@ class DBSqlite(DBBase):
             query = """UPDATE docs
                        SET tid=?, data=?, user=?, public=?, synced=?
                        WHERE sid=?"""
-            args = (doc.tid, json.dumps(doc.data), doc.user,
+            args = (doc.tid, data, doc.user,
                     int(doc.public), int(doc.synced), doc.sid)
 
         elif type == COMMIT_PROCESS:
@@ -174,20 +189,25 @@ class DBSqlite(DBBase):
             if row:
                 data = row['data']
                 data[process] = ids
+                args = (json.dumps(data),)
+                query = "UPDATE internal SET data=? WHERE id='last_sync'"
             else:
-                data = {process: ids}
-            args = (json.dumps(data),)
-            self.cursor.execute("""UPDATE internal SET data=?
-                                   WHERE id='last_sync'""", args)
+                args = ('last_sync', json.dumps({process: ids}))
+                query = "INSERT INTO internal (id, data) VALUES (?, ?)"
+
+            self.cursor.execute(query, args)
+            self.connection.commit()
         except Exception as e:
             raise DatabaseException(e)
 
     def get_docs_to_commit(self):
         try:
-            self.cursor.execute('SELECT * FROM docs WHERE synched=0')
+            self.cursor.execute('SELECT * FROM docs WHERE synced=0')
             rows = self.cursor.fetchall()
         except Exception as e:
             raise DatabaseException(e)
+        if rows is None:
+            rows = []
         return rows
 
     def get_last_tid(self):
@@ -208,9 +228,8 @@ class DBSqlite(DBBase):
         self.cursor.execute("""SELECT data FROM internal
                                WHERE id='last_sync'""")
         row = self.cursor.fetchone()
-        if row:
-            data = json.loads(row['data'])
-        else:
+        data = row['data']
+        if data is None:
             data = {}
 
         if 'update' in data:

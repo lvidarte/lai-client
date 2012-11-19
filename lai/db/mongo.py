@@ -54,7 +54,7 @@ class DBMongo(DBBase):
 
     def get(self, id):
         try:
-            spec = {'id': int(id)}
+            spec = {'id': int(id), 'data': {'$exists': 1}}
             fields = {'_id': 0}
             row = self.db.docs.find_one(spec, fields)
         except Exception as e:
@@ -65,7 +65,7 @@ class DBMongo(DBBase):
 
     def getall(self):
         try:
-            spec = {'data.content': {'$exists': 1}}
+            spec = {'data': {'$exists': 1}}
             fields = {'_id': 0}
             sort = [('tid', 1)]
             cur = self.db.docs.find(spec, fields, sort=sort)
