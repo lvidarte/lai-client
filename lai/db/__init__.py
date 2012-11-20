@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with lai-client. If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ['DBSqlite', 'DBMySQL', 'DBMongo']
-from lai.db.sqlite import  DBSqlite
-from lai.db.mysql import  DBMySQL
-from lai.db.mongo import  DBMongo
+#__all__ = ['DBSqlite', 'DBMySQL', 'DBMongo']
+#from lai.db.sqlite import  DBSqlite
+#from lai.db.mysql import  DBMySQL
+#from lai.db.mongo import  DBMongo

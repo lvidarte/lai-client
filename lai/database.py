@@ -39,13 +39,13 @@ class Database(object):
             config = DATABASE
 
         if engine == 'sqlite':
-            from lai.db import DBSqlite
+            from lai.db.sqlite import DBSqlite
             return DBSqlite(config)
         if engine == 'mongo':
-            from lai.db import DBMongo
+            from lai.db.mongo import DBMongo
             return DBMongo(config)
         if engine == 'mysql':
-            from lai.db import DBMySQL
+            from lai.db.mysql import DBMySQL
             return DBMySQL(config)
         else:
             raise Exception('Invalid engine ' + engine)
