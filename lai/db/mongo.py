@@ -25,7 +25,7 @@ from lai import Document
 class DBMongo(DBBase):
 
     def connect(self): 
-        try: 
+        try:
             self.connection = pymongo.Connection(self.config['HOST'],
                                                  self.config['PORT'])
             self.db = self.connection[self.config['NAME']]

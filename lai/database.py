@@ -44,6 +44,9 @@ class Database(object):
         if engine == 'mongo':
             from lai.db import DBMongo
             return DBMongo(config)
+        if engine == 'mysql':
+            from lai.db import DBMySQL
+            return DBMySQL(config)
         else:
             raise Exception('Invalid engine ' + engine)
 

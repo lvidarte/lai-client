@@ -17,6 +17,8 @@
 from lai import config
 from lai.data import Data
 
+import json
+
 
 class Document(dict):
 
@@ -31,8 +33,8 @@ class Document(dict):
         if user is None:
             user = config.USER
         self.__setitem__('user', user)
-        self.__setitem__('public', public)
-        self.__setitem__('synced', synced)
+        self.__setitem__('public', bool(public))
+        self.__setitem__('synced', bool(synced))
 
     def __getattr__(self, attr):
         return self.get(attr, None)
@@ -42,6 +44,12 @@ class Document(dict):
             if key == 'data' and (value is not None and type(value) != Data):
                 if type(value) == dict:
                     value = Data(**value)
+                elif type(value) in (str, unicode):
+                    try:
+                        d = json.loads(value)
+                        value = Data(**d)
+                    except ValueError:
+                        value = Data(value)
                 else:
                     value = Data(value)
             super(Document, self).__setitem__(key, value)

@@ -175,7 +175,7 @@ class DBSqlite(DBBase):
             raise DatabaseException('Document does not have id')
         if doc.sid is None:
             try:
-                self.cursor.execute('DELETE FROM docs WHERE id=?', (doc.id))
+                self.cursor.execute('DELETE FROM docs WHERE id=?', (doc.id,))
                 self.connection.commit()
                 assert self.cursor.rowcount == 1
             except Exception as e:
@@ -250,5 +250,5 @@ class DBSqlite(DBBase):
         return docs
 
     def __str__(self):
-        return "%s://%s" % ('sqlite', self.config['NAME'])
+        return "%s://%s" % (self.config['ENGINE'], self.config['NAME'])
 
