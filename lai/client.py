@@ -23,7 +23,6 @@ from lai import config
 from lai.document import Document
 from lai.database import UPDATE_PROCESS, COMMIT_PROCESS
 from lai.lib import crypto
-from lai.lib import gist
 
 
 CLIENT_PRV_KEY = open(config.CLIENT_PRV_KEY_PATH, 'r').read()
@@ -112,7 +111,7 @@ class Client:
         msg  = json.dumps(request)
         enc  = crypto.encrypt(msg, config.SERVER_PUB_KEY)
         data = base64.b64encode(enc)
-        
+
         url = self._get_url(request)
         data = self.fetch(url, data)
 
@@ -137,6 +136,7 @@ class Client:
         return res.read()
 
     def send_to_gist(self, doc):
+        from lai.lib import gist
         g = gist.Gist(config.GITHUB_USER, config.GITHUB_PASSWORD)
         return g.create(True, doc)
 
