@@ -30,3 +30,4 @@ Copy from server::
 
     $ lai copy --server 5015d7273042976dc5000230
 
+**Lai uses sqlite as default database engine, but can use mysql and mongodb.**
