@@ -1,7 +1,13 @@
 ------------------------------------------------------------------------------
-Release:    0.3.4
-Date:       In Progress
+Release:    0.3.5
+Date:       In progress
 
+------------------------------------------------------------------------------
+Release:    0.3.4
+Date:       November 20th, 2012
+
+ * Issue 34: MySQL driver
+ * Issue 31: Sqlite driver must be revisited
  * Issue 40: La función para copiar un doc al portapapeles no funciona
  * Issue 39: Activar la función para mandar documentos a gist
 
