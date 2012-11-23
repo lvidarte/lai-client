@@ -20,8 +20,7 @@ import os
 import readline
 import rlcompleter
 
-from pprint import pprint as pp
-from lai import config, Client, Database, Document, Data
+from lai import config, Client, Database, Document
 
 
 historyPath = os.path.expanduser("~/.pyhistory")
@@ -45,3 +44,13 @@ client = Client(database)
 
 print "Python", sys.version.split('\n')[0]
 print "Welcome to lai shell"
+print "Autocompletion and history are enabled"
+print ""
+print "Lai objects:"
+print "    config    (module)  from lai import config"
+print "    Database  (class)   from lai import Database"
+print "    Client    (class)   from lai import Client"
+print "    Document  (class)   from lai import Document"
+print "    database  (object)  database = Database()"
+print "    client    (object)  client = Client(database)"
+print ""

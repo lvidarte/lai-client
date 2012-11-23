@@ -59,6 +59,11 @@ Finally create the lai/local_config.py file and set the following
 
 ### MongoDB
 
+Install the pymongo package
+
+    source env/bin/activate
+    pip install pymongo==2.2
+
 To use mongodb set into lai/local_config.py
 
     DATABASE = {'ENGINE': 'mongo',
@@ -67,6 +72,11 @@ To use mongodb set into lai/local_config.py
                 'NAME'  : 'lai_client'}
 
 ### MySQL
+
+Install the MySQL-python package
+
+    source env/bin/activate
+    pip install MySQL-python==1.2.4c1
 
 To user mysql set into lai/local_config.py
 
@@ -79,7 +89,40 @@ To user mysql set into lai/local_config.py
 
 ## c. Setting Github
 
+Install the PyGithub module
+
+    source env/bin/activate
+    pip install PyGithub==1.8.0
+
 Put the following into lai/local_config.py
 
     GITHUB_USER = 'your-username'
     GITHUB_PASSWORD = 'your-passwd'
+
+## d. Use the lai shell
+
+    $ ./shell.py 
+    Python 2.7.2+ (default, Jul 20 2012, 22:12:53) 
+    Welcome to lai shell
+    Autocompletion and history are enabled
+    
+    Lai objects:
+        config    (module)  from lai import config
+        Database  (class)   from lai import Database
+        Client    (class)   from lai import Client
+        Document  (class)   from lai import Document
+        database  (object)  database = Database()
+        client    (object)  client = Client(database)
+    
+    >>> for doc in client.search('apache'):
+    ...     print doc.data.content
+    ... 
+    ps -ef | awk '!/awk/&&/sbin\/apache/' | wc -l
+    apache2ctl status
+    apache2ctl configtest
+    zabbix: zabbix_get -s192.168.12.138 -p10050 -k"proc.num[apache2]"
+    update-rc.d apache2 defaults 20 80
+    >>> 
+
+
+    
