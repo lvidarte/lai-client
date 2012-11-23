@@ -41,7 +41,7 @@ Finally run lai with lai-client script
 
 # 4. Other settings
 
-## Set your user and key_name to connect with lai-server
+## a. Set your user and key name to connect with lai-server
 
 First login into http://lai.calcifer.com.ar with your Google account.
 Then upload your public key and set a name to identify it.
@@ -50,7 +50,7 @@ Finally create the lai/local_config.py file and set the following
     USER = "your-username@gmail.com"
     KEY_NAME = "name_of_your_public_key"
 
-## Setting database
+## b. Setting database
 
 ### The default database engine in Lai is Sqlite3
 
@@ -77,7 +77,7 @@ To user mysql set into lai/local_config.py
                 'PASSWD': 'passwd',
                 'NAME'  : 'db-name'}
 
-## Setting Github
+## c. Setting Github
 
 Put the following into lai/local_config.py
 
