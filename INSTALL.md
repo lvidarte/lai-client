@@ -1,15 +1,15 @@
-# Clone github repository
+# 1. Clone github repository
 
     $ git clone git@github.com:lvidarte/lai-client.git
 
-# Create env
+# 2. Create virtualenv
 
     $ cd lai-client
     $ ./bin/create_env.sh
 
 This will install the required packages argparse and pycrypto
 
-# Packages
+## Packages
 
 ### Required
 
@@ -28,7 +28,9 @@ To Install all packages
     $ source env/bin/activate
     $ pip install -r requirements.txt
 
-# Set the following bash variables
+# 3. Set bash variables
+
+Put the following in your .bashrc
 
     export LAI_ENV_PATH=/path/to/virtualenv
     export LAI_MODULE_PATH=/path/to/module/lai
@@ -37,7 +39,9 @@ Finally run lai with lai-client script
 
     $ bin/lai-client
 
-# Set your user and key_name
+# 4. Other settings
+
+## Set your user and key_name to connect with lai-server
 
 First login into http://lai.calcifer.com.ar with your Google account.
 Then upload your public key and set a name to identify it.
@@ -46,19 +50,25 @@ Finally create the lai/local_config.py file and set the following
     USER = "your-username@gmail.com"
     KEY_NAME = "name_of_your_public_key"
 
-# The default database engine in Lai is sqlite3
+## Setting database
+
+### The default database engine in Lai is Sqlite3
 
     DATABASE = {'ENGINE': 'sqlite',
-                'NAME'  : '/home/your-username/lai.db'}
+                'NAME'  : '/path/to/lai.db'}
 
-# To use mongodb set into lai/local_config.py
+### MongoDB
+
+To use mongodb set into lai/local_config.py
 
     DATABASE = {'ENGINE': 'mongo',
                 'HOST'  : 'localhost',
                 'PORT'  : 27017,
                 'NAME'  : 'lai_client'}
 
-# To user mysql set into lai/config.py
+### MySQL
+
+To user mysql set into lai/local_config.py
 
     DATABASE = {'ENGINE': 'mysql',
                 'HOST'  : 'localhost',
@@ -67,3 +77,9 @@ Finally create the lai/local_config.py file and set the following
                 'PASSWD': 'passwd',
                 'NAME'  : 'db-name'}
 
+## Setting Github
+
+Put the following into lai/local_config.py
+
+    GITHUB_USER = 'your-username'
+    GITHUB_PASSWORD = 'your-passwd'
