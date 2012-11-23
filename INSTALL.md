@@ -101,7 +101,12 @@ Put the following into lai/local_config.py
 
 ## d. Use the lai shell
 
-    $ ./shell.py 
+Just create a symbolic link to the virtualenv python executable
+
+    ln -s /path/to/your/virtualenv/bin/python /path/to/your/lai-client/bin/python
+
+Finally run ./shell.py
+
     Python 2.7.2+ (default, Jul 20 2012, 22:12:53) 
     Welcome to lai shell
     Autocompletion and history are enabled
