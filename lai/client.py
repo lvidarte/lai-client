@@ -58,7 +58,8 @@ class Client:
             for doc_ in response['docs']:
                 doc = Document(**doc_)
                 doc = self.db.update(doc, type=response['process'])
-                ids.append(doc.id)
+                if doc.id:
+                    ids.append(doc.id)
         return ids
 
     def _get_request_base_doc(self):
