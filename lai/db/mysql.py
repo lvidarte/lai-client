@@ -95,20 +95,20 @@ class DBMySQL(DBBase):
                 rows.append(row)
         return [Document(**row) for row in rows]
 
-    def get(self, id, deleted=False):
+    def get(self, id, pk='id', deleted=False):
         try:
             if deleted:
-                query = 'SELECT * FROM lai_docs WHERE id=%s'
+                query = 'SELECT * FROM lai_docs WHERE %s=%%s' % pk
             else:
                 query = '''SELECT * FROM lai_docs
-                           WHERE id=%s AND data IS NOT NULL'''
+                           WHERE %%s=%s AND data IS NOT NULL''' % pk
             self.cursor.execute(query, id)
             row = self.cursor.fetchone()
         except Exception as e:
             raise DatabaseException(e)
         if row:
             return Document(**row)
-        raise NotFoundError('id %s not found' % id)
+        raise NotFoundError('%s %s not found' % (pk, id))
 
     def getall(self):
         try:
@@ -141,36 +141,38 @@ class DBMySQL(DBBase):
             raise DatabaseException(e)
         return doc
 
-    def update(self, doc, type=None):
+    def update(self, doc, process=None):
+        merged = doc.merged()
         data = doc.data
         if data is not None:
+            doc.merged(False)
             data = json.dumps(doc.data)
 
-        if type is None:
+        if process is None:
             doc.synced = False
             query = """UPDATE lai_docs
                        SET data=%s, user=%s, public=%s, synced=%s
                        WHERE id=%s"""
             args = (data, doc.user, int(doc.public), int(doc.synced), doc.id)
 
-        elif type == UPDATE_PROCESS:
+        elif process == UPDATE_PROCESS:
             self.cursor.execute("SELECT id FROM lai_docs WHERE sid=%s",
                                 doc.sid)
             if self.cursor.fetchone() is None:
                 return self.insert(doc, synced=True)
-            doc.synced = True
+            doc.synced = not merged # must be commited if was merged
             query = """UPDATE lai_docs
                        SET tid=%s, data=%s, user=%s, public=%s, synced=%s
                        WHERE sid=%s"""
             args = (doc.tid, data, doc.user,
                     int(doc.public), int(doc.synced), doc.sid)
 
-        elif type == COMMIT_PROCESS:
+        elif process == COMMIT_PROCESS:
             doc.synced = True
             query = "UPDATE lai_docs SET sid=%s, tid=%s, synced=%s WHERE id=%s"
             args = (doc.sid, doc.tid, int(doc.synced), doc.id)
         else:
-            raise DatabaseException('Incorrect update type')
+            raise DatabaseException('Incorrect update process')
 
         try:
             self.cursor.execute(query, args)
@@ -194,7 +196,7 @@ class DBMySQL(DBBase):
         doc.data = None
         return self.update(doc)
 
-    def save_last_sync(self, process, ids):
+    def save_last_sync(self, ids, process):
         try:
             self.cursor.execute("""SELECT data FROM lai_internal
                                    WHERE id='last_sync'""")

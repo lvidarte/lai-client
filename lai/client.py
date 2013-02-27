@@ -22,6 +22,7 @@ import base64
 from lai import config
 from lai.document import Document
 from lai.database import UPDATE_PROCESS, COMMIT_PROCESS
+from lai.database import NotFoundError
 from lai.lib import crypto
 
 
@@ -33,34 +34,54 @@ class Client:
     def __init__(self, database):
         self.db = database
         self.db.connect()
+        self.session_id = None
 
     def sync(self):
-        # Update
+        docs = self.update()
+        if docs:
+            return docs
+        self.commit()
+
+    def update(self, docs=None):
+        if docs is None:
+            request = self._get_request_base_doc()
+            request['process'] = UPDATE_PROCESS
+            response = self._send(request)
+            self.session_id = response['session_id']
+            docs = [Document(**doc) for doc in response['docs']]
+        for doc in docs:
+            if self.has_conflict(doc):
+                return docs
+        ids = self._update(docs, UPDATE_PROCESS)
+        self.db.save_last_sync(ids, UPDATE_PROCESS)
+
+    def commit(self):
         request = self._get_request_base_doc()
-        request['process'] = UPDATE_PROCESS
-        response = self._send(request)
-        ids = self._update(response)
-        self.db.save_last_sync(UPDATE_PROCESS, ids)
-        # Commit
-        request = self._get_request_base_doc()
-        request['session_id'] = response['session_id']
+        request['session_id'] = self.session_id
         request['process'] = COMMIT_PROCESS
         request['docs'] = self.db.get_docs_to_commit()
         ids = []
-        if len(request['docs']):
+        if request['docs']:
             response = self._send(request)
-            ids = self._update(response)
-        self.db.save_last_sync(COMMIT_PROCESS, ids)
+            docs = [Document(**doc) for doc in response['docs']]
+            ids = self._update(docs, COMMIT_PROCESS)
+        self.db.save_last_sync(ids, COMMIT_PROCESS)
 
-    def _update(self, response):
+    def _update(self, docs, process):
         ids = []
-        if len(response['docs']):
-            for doc_ in response['docs']:
-                doc = Document(**doc_)
-                doc = self.db.update(doc, type=response['process'])
-                if doc.id:
-                    ids.append(doc.id)
+        for doc in docs:
+            doc = self.db.update(doc, process)
+            if doc.id:
+                ids.append(doc.id)
         return ids
+
+    def has_conflict(self, remote_doc):
+        try:
+            local_doc = self.db.get(remote_doc.sid, pk='sid')
+            if not local_doc.synced and not remote_doc.merged():
+                return local_doc
+        except NotFoundError:
+            pass
 
     def _get_request_base_doc(self):
         return {'user'      : config.USER,

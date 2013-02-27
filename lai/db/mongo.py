@@ -52,19 +52,19 @@ class DBMongo(DBBase):
             raise DatabaseException(e)
         return [Document(**row) for row in cur]
 
-    def get(self, id, deleted=False):
+    def get(self, id, pk='id', deleted=False):
         try:
             if deleted:
-                spec = {'id': int(id)}
+                spec = {pk: int(id)}
             else:
-                spec = {'id': int(id), 'data': {'$exists': 1}}
+                spec = {pk: int(id), 'data': {'$exists': 1}}
             fields = {'_id': 0}
             row = self.db.docs.find_one(spec, fields)
         except Exception as e:
             raise DatabaseException(e)
         if row:
             return Document(**row)
-        raise NotFoundError('id %s not found' % id)
+        raise NotFoundError('%s %s not found' % (pk, id))
 
     def getall(self):
         try:
@@ -91,26 +91,27 @@ class DBMongo(DBBase):
             raise DatabaseException(e)
         return doc
 
-    def update(self, doc, type=None):
-        if type is None:
+    def update(self, doc, process=None):
+        if process is None:
             pk = 'id'
             id = doc.id
             doc.synced = False
             set = doc
-        elif type == UPDATE_PROCESS:
+        elif process == UPDATE_PROCESS:
             if self.db.docs.find({'sid': doc.sid}).count() == 0:
                 return self.insert(doc, synced=True)
             pk = 'sid'
             id = doc.sid
-            doc.synced = True
+            doc.synced = not doc.merged() # must be commited if was merged
+            doc.merged(False)
             set = doc
-        elif type == COMMIT_PROCESS:
+        elif process == COMMIT_PROCESS:
             pk = 'id'
             id = doc.id
             doc.synced = True
             set = {'sid': doc.sid, 'tid': doc.tid, 'synced': doc.synced}
         else:
-            raise DatabaseException('Incorrect update type')
+            raise DatabaseException('Incorrect update process')
 
         try:
             rs = self.db.docs.update({pk: id}, {'$set': set}, safe=True)
@@ -132,7 +133,7 @@ class DBMongo(DBBase):
         doc.data = None
         return self.update(doc)
 
-    def save_last_sync(self, process, ids):
+    def save_last_sync(self, ids, process):
         try:
             spec = {'_id': 'last_sync'}
             document = {'$set': {process: ids}}

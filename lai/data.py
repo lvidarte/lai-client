@@ -22,6 +22,16 @@ class Data(dict):
         self.__setitem__('description', description)
         super(Data, self).__init__(*args, **kwargs)
 
+    def _merged(self, set=None):
+        if set == True:
+            self.__setitem__('merged', True)
+        elif set == False:
+            try:
+                self.__delattr__('merged')
+            except:
+                pass
+        return True if self.merged else False
+
     def __getattr__(self, attr):
         return self.get(attr, None)
 

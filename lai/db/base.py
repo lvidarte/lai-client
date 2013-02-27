@@ -31,10 +31,13 @@ class DBBase(object):
     def save(self, doc):
         raise NotImplementedError('save not implemented')
 
+    def update(self, doc, process=None):
+        raise NotImplementedError('update not implemented')
+
     def delete(self, doc):
         raise NotImplementedError('delete not implemented')
 
-    def save_last_sync(self):
+    def save_last_sync(self, ids, process):
         raise NotImplementedError('save_last_sync not implemented')
 
     def get_docs_to_commit(self):

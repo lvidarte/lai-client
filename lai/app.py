@@ -176,11 +176,14 @@ def edit(args):
         doc.public = args.public
         doc = client.save(doc)
 
-def _editor(args):
+def _get_editor_cmd():
     editor_cmd = os.getenv('EDITOR')
-
     if editor_cmd is None:
         sys.exit("Environment var EDITOR is unset")
+    return editor_cmd
+
+def _editor(args):
+    editor_cmd = _get_editor_cmd()
 
     if args.id:
         try:
@@ -192,13 +195,22 @@ def _editor(args):
 
     (_, filename) = tempfile.mkstemp()
 
-    with codecs.open(filename, 'w', encoding='utf8') as file:
-        data = "" if doc.data is None else doc.data.content
-        file.write(data)
+    with codecs.open(filename, 'w', encoding='utf8') as f:
+        content = getattr(doc.data, 'content') or ''
+        description = getattr(doc.data, 'description') or ''
+        lines = ["### content", content, "### description", description]
+        data = '\n'.join(lines)
+        f.write(data)
 
     if os.system(editor_cmd + " " + filename) == 0:
-        with codecs.open(filename, 'r', encoding='utf8') as file:
-            doc.data = file.read().strip()
+        with codecs.open(filename, 'r', encoding='utf8') as f:
+            try:
+                content, description = _read_data(f)
+            except:
+                pass
+            else:
+                doc.data.content = content
+                doc.data.description = description
             if doc.data or doc.id:
                 client.save(doc)
 
@@ -212,7 +224,70 @@ def delete(args):
     doc = client.delete(doc)
 
 def sync(args):
-    client.sync()
+    docs = client.update()
+    if docs:
+        resolved_docs = []
+        for remote_doc in docs:
+            local_doc = client.has_conflict(remote_doc)
+            if local_doc:
+                new_doc = _merge_editor(remote_doc, local_doc)
+                resolved_docs.append(new_doc)
+            else:
+                resolved_docs.append(remote_doc)
+        client.update(resolved_docs)
+    client.commit()
+
+def _merge_editor(remote_doc, local_doc):
+    editor_cmd = _get_editor_cmd()
+    (_, filename) = tempfile.mkstemp()
+
+    with codecs.open(filename, 'w', encoding='utf8') as f:
+        r_content = getattr(remote_doc.data, 'content') or ''
+        r_description = getattr(remote_doc.data, 'description') or ''
+        l_content = getattr(local_doc.data, 'content') or ''
+        l_description = getattr(local_doc.data, 'description') or ''
+
+        lines = [
+            "### Conflict detected",
+            "### remote content (tid %s)" % remote_doc.tid,
+            r_content,
+            "### local content (tid %s)" % local_doc.tid,
+            l_content,
+            "### remote description (tid %s)" % remote_doc.tid,
+            r_description,
+            "### local description (tid %s)" % local_doc.tid,
+            l_description,
+            "### Put here the final version",
+            "### content",
+            "### description",
+        ]
+        data = '\n'.join(lines)
+        f.write(data)
+
+    if os.system(editor_cmd + " " + filename) == 0:
+        with codecs.open(filename, 'r', encoding='utf8') as f:
+            try:
+                content, description = _read_data(f)
+            except:
+                pass
+            else:
+                remote_doc.data.content = content
+                remote_doc.data.description = description
+                remote_doc.merged(True)
+
+    os.unlink(filename)
+    return remote_doc
+
+def _read_data(f):
+    lines = f.readlines()
+    try:
+        i_content = lines.index('### content\n')
+        i_description = lines.index('### description\n')
+    except ValueError:
+        raise Exception('Required fields not found')
+    content = ''.join(lines[i_content + 1:i_description]).strip()
+    description = ''.join(lines[i_description + 1:]).strip()
+    return content, description
 
 def copy(args):
     if args.from_server:

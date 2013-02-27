@@ -36,6 +36,10 @@ class Document(dict):
         self.__setitem__('public', bool(public))
         self.__setitem__('synced', bool(synced))
 
+    def merged(self, set=None):
+        if self.data:
+            return self.data._merged(set)
+
     def __getattr__(self, attr):
         return self.get(attr, None)
 
