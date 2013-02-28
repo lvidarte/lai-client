@@ -27,14 +27,21 @@ from lai import Document
 
 class DBMySQL(DBBase):
 
+    def __init__(self, name='', user='', passwd='', host='127.0.0.1', port=3306):
+        self.name = name
+        self.user = user
+        self.passwd = passwd
+        self.host = host
+        self.port = port
+
     def connect(self):
         try:
             args = {
-                'host': self.config['HOST'],
-                'port': self.config.get('PORT', 3306),
-                'user': self.config['USER'],
-                'passwd': self.config.get('PASSWD', ''),
-                'db': self.config['NAME'],
+                'host': self.host,
+                'port': self.port,
+                'user': self.user,
+                'passwd': self.passwd,
+                'db': self.name,
                 'cursorclass': DictCursor,
                 }
             self.connection = mysql.connect(**args)
@@ -263,9 +270,6 @@ class DBMySQL(DBBase):
         return docs
 
     def __str__(self):
-        return "%s://%s:%s/%s" % (self.config['ENGINE'],
-                                  self.config['HOST'],
-                                  self.config['PORT'],
-                                  self.config['NAME'])
+        return "%s://%s:%s/%s" % ('mysql', self.host, self.port, self.name)
 
 

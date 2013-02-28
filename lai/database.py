@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with lai-client. If not, see <http://www.gnu.org/licenses/>.
 
-from lai.config import DATABASE
+from lai import config
 
 
 UPDATE_PROCESS = 'update'
@@ -32,21 +32,23 @@ class NotFoundError(DatabaseException):
 class Database(object):
     """Factory"""
 
-    def __new__(cls, engine=None, config=None):
-        if engine is None:
-            engine = DATABASE['ENGINE']
-        if config is None:
-            config = DATABASE
+    def __new__(cls, **kwargs):
+
+        try:
+            engine = kwargs['engine']
+            del kwargs['engine']
+        except KeyError:
+            raise Exception('Engine not set')
 
         if engine == 'sqlite':
             from lai.db.sqlite import DBSqlite
-            return DBSqlite(config)
+            return DBSqlite(**kwargs)
         if engine == 'mongo':
             from lai.db.mongo import DBMongo
-            return DBMongo(config)
+            return DBMongo(**kwargs)
         if engine == 'mysql':
             from lai.db.mysql import DBMySQL
-            return DBMySQL(config)
+            return DBMySQL(**kwargs)
         else:
             raise Exception('Invalid engine ' + engine)
 

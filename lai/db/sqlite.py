@@ -27,10 +27,13 @@ from lai import Document
 
 class DBSqlite(DBBase):
 
+    def __init__(self, name):
+        self.name = name
+
     def connect(self):
-        database_exists = os.path.exists(self.config['NAME'])
+        database_exists = os.path.exists(self.name)
         try:
-            self.connection = sqlite.connect(self.config['NAME'])
+            self.connection = sqlite.connect(self.name)
             self.connection.row_factory = self._dict_factory
             self.connection.create_function('REGEXP', 2, self._regexp)
             self.cursor = self.connection.cursor()
@@ -252,5 +255,5 @@ class DBSqlite(DBBase):
         return docs
 
     def __str__(self):
-        return "%s://%s" % (self.config['ENGINE'], self.config['NAME'])
+        return "%s://%s" % ('sqlite', self.name)
 

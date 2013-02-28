@@ -24,11 +24,15 @@ from lai import Document
 
 class DBMongo(DBBase):
 
+    def __init__(self, name, host='127.0.0.1', port=27017):
+        self.name = name
+        self.host = host
+        self.port = port
+
     def connect(self): 
         try:
-            self.connection = pymongo.Connection(self.config['HOST'],
-                                                 self.config['PORT'])
-            self.db = self.connection[self.config['NAME']]
+            self.connection = pymongo.Connection(self.host, self.port)
+            self.db = self.connection[self.name]
         except AutoReconnect:
             raise DatabaseException("It's not possible connect to the database")
 
@@ -186,8 +190,5 @@ class DBMongo(DBBase):
         return docs
 
     def __str__(self):
-        return "%s://%s:%s/%s" % (self.config['ENGINE'],
-                                  self.config['HOST'],
-                                  self.config['PORT'],
-                                  self.config['NAME'])
+        return "%s://%s:%s/%s" % ('mongo', self.host, self.port, self.name)
 

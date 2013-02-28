@@ -39,7 +39,7 @@ atexit.register(save_history)
 del os, atexit, readline, rlcompleter, save_history, historyPath
 
 
-database = Database()
+database = Database(**config.database)
 client = Client(database)
 
 print "Python", sys.version.split('\n')[0]

@@ -25,9 +25,9 @@ KEY_NAME = ""
 #GITHUB_USER = ""
 #GITHUB_PASSWORD = ""
 
-DATABASE = {
-    'ENGINE': 'sqlite',
-    'NAME'  : 'lai.db',
+database = {
+    'engine': 'sqlite',
+    'name'  : 'lai.db',
 }
 
 

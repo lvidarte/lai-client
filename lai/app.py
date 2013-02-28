@@ -25,6 +25,7 @@ try:
 except:
     colored = None
 
+from lai import config
 from lai import Client, Database, Document, Data
 from lai import prog, version, description
 from lai.database import NotFoundError
@@ -340,5 +341,5 @@ def status(args):
 
 if __name__ == '__main__':
     args = _parse_args()
-    client = Client(Database())
+    client = Client(Database(**config.database))
     locals()[args.command](args)

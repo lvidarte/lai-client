@@ -16,9 +16,6 @@
 
 class DBBase(object):
 
-    def __init__(self, config):
-        self.config = config
-
     def connect(self):
         raise NotImplementedError('connect not implemented')
 
