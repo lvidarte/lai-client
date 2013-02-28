@@ -54,10 +54,12 @@ class DBMongo(DBBase):
 
     def get(self, id, pk='id', deleted=False):
         try:
+            if pk == 'id':
+                id = int(id)
             if deleted:
-                spec = {pk: int(id)}
+                spec = {pk: id}
             else:
-                spec = {pk: int(id), 'data': {'$exists': 1}}
+                spec = {pk: id, 'data': {'$exists': 1}}
             fields = {'_id': 0}
             row = self.db.docs.find_one(spec, fields)
         except Exception as e:
@@ -104,7 +106,8 @@ class DBMongo(DBBase):
             id = doc.sid
             doc.synced = not doc.merged() # must be commited if was merged
             doc.merged(False)
-            set = doc
+            set = {'tid': doc.tid, 'data': doc.data, 'user': doc.user,
+                   'public': doc.public, 'synced': doc.synced}
         elif process == COMMIT_PROCESS:
             pk = 'id'
             id = doc.id

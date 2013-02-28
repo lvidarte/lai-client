@@ -36,10 +36,10 @@ class Client:
         self.db.connect()
         self.session_id = None
 
-    def sync(self):
-        docs = self.update()
-        if docs:
-            return docs
+    def sync(self, docs=None):
+        conflicts = self.update(docs)
+        if conflicts:
+            return conflicts
         self.commit()
 
     def update(self, docs=None):
@@ -49,9 +49,9 @@ class Client:
             response = self._send(request)
             self.session_id = response['session_id']
             docs = [Document(**doc) for doc in response['docs']]
-        for doc in docs:
-            if self.has_conflict(doc):
-                return docs
+        docs_inspected = self.inspect_conflicts(docs)
+        if docs_inspected['conflict_detected']:
+            return docs_inspected
         ids = self._update(docs, UPDATE_PROCESS)
         self.db.save_last_sync(ids, UPDATE_PROCESS)
 
@@ -75,13 +75,26 @@ class Client:
                 ids.append(doc.id)
         return ids
 
-    def has_conflict(self, remote_doc):
-        try:
-            local_doc = self.db.get(remote_doc.sid, pk='sid')
-            if not local_doc.synced and not remote_doc.merged():
-                return local_doc
-        except NotFoundError:
-            pass
+    def inspect_conflicts(self, docs):
+        docs_inspected = {'docs': [], 'conflict_detected': False}
+        for remote_doc in docs:
+            try:
+                local_doc = self.db.get(remote_doc.sid, pk='sid')
+            except NotFoundError:
+                local_doc = None
+            if local_doc and not local_doc.synced and not remote_doc.merged():
+                docs_inspected['conflict_detected'] = True
+                inspected = {'conflict': True,
+                             'remote_doc': remote_doc,
+                             'local_doc': local_doc,
+                             'ok_doc': None}
+            else:
+                inspected = {'conflict': False,
+                             'remote_doc': None,
+                             'local_doc': None,
+                             'ok_doc': remote_doc}
+            docs_inspected['docs'].append(inspected)
+        return docs_inspected
 
     def _get_request_base_doc(self):
         return {'user'      : config.USER,

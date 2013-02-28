@@ -30,7 +30,7 @@ from lai import prog, version, description
 from lai.database import NotFoundError
 
 
-COMMANDS = ('search', 'add', 'get', 'edit',
+COMMANDS = ('search', 'add', 'get', 'edit', 'editor',
             'delete', 'sync', 'copy', 'status',
             '-h', '--help', '-v', '--version')
 
@@ -77,6 +77,10 @@ def _parse_args():
     group_edit = parser_edit.add_mutually_exclusive_group()
     group_edit.add_argument('-p', '--public', action='store_true', dest='public')
     group_edit.add_argument('-P', '--private', action='store_false', dest='public')
+
+    # Editor
+    parser_edit = subparsers.add_parser('editor')
+    parser_edit.add_argument('id')
 
     # Delete
     parser_delete = subparsers.add_parser('delete')
@@ -176,6 +180,10 @@ def edit(args):
         doc.public = args.public
         doc = client.save(doc)
 
+def editor(args):
+    args.editor = True
+    edit(args)
+
 def _get_editor_cmd():
     editor_cmd = os.getenv('EDITOR')
     if editor_cmd is None:
@@ -196,9 +204,9 @@ def _editor(args):
     (_, filename) = tempfile.mkstemp()
 
     with codecs.open(filename, 'w', encoding='utf8') as f:
-        content = getattr(doc.data, 'content') or ''
-        description = getattr(doc.data, 'description') or ''
-        lines = ["### content", content, "### description", description]
+        content_ = getattr(doc.data, 'content') or ''
+        description_ = getattr(doc.data, 'description') or ''
+        lines = ["### content", content_, "### description", description_]
         data = '\n'.join(lines)
         f.write(data)
 
@@ -207,12 +215,12 @@ def _editor(args):
             try:
                 content, description = _read_data(f)
             except:
-                pass
+                sys.exit('Error: content or description was not found')
             else:
-                doc.data.content = content
-                doc.data.description = description
-            if doc.data or doc.id:
-                client.save(doc)
+                if content_ != content or description_ != description:
+                    doc.data.content = content
+                    doc.data.description = description
+                    client.save(doc)
 
     os.unlink(filename)
 
@@ -224,18 +232,13 @@ def delete(args):
     doc = client.delete(doc)
 
 def sync(args):
-    docs = client.update()
-    if docs:
-        resolved_docs = []
-        for remote_doc in docs:
-            local_doc = client.has_conflict(remote_doc)
-            if local_doc:
-                new_doc = _merge_editor(remote_doc, local_doc)
-                resolved_docs.append(new_doc)
-            else:
-                resolved_docs.append(remote_doc)
-        client.update(resolved_docs)
-    client.commit()
+    conflicts = client.sync()
+    if conflicts:
+        for inspected in conflicts['docs']:
+            if inspected['conflict']:
+                inspected['ok_doc'] = _merge_editor(inspected['remote_doc'],
+                                                    inspected['local_doc'])
+        conflicts = client.sync([i['ok_doc'] for i in conflicts['docs']])
 
 def _merge_editor(remote_doc, local_doc):
     editor_cmd = _get_editor_cmd()
@@ -248,7 +251,7 @@ def _merge_editor(remote_doc, local_doc):
         l_description = getattr(local_doc.data, 'description') or ''
 
         lines = [
-            "### Conflict detected",
+            "### Conflict detected on doc %s" % remote_doc.sid,
             "### remote content (tid %s)" % remote_doc.tid,
             r_content,
             "### local content (tid %s)" % local_doc.tid,
