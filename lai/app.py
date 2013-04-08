@@ -58,6 +58,7 @@ def _parse_args():
     parser_add = subparsers.add_parser('add')
     parser_add.add_argument('content', nargs='?', help='Text for the data.content field')
     parser_add.add_argument('-d', '--description', nargs='?', help='Text for the data.description field')
+    parser_add.add_argument('-e', '--editor', action='store_true', help='Use the default editor')
     group_add = parser_add.add_mutually_exclusive_group()
     group_add.add_argument('-p', '--public', action='store_true', dest='public', help='Make the note public')
     group_add.add_argument('-P', '--private', action='store_false', dest='public', help='Make the note private')
@@ -74,7 +75,7 @@ def _parse_args():
     parser_edit.add_argument('id')
     parser_edit.add_argument('-c', '--content', nargs='?')
     parser_edit.add_argument('-d', '--description', nargs='?')
-    parser_edit.add_argument('-e', '--editor', action='store_true')
+    parser_edit.add_argument('-e', '--editor', action='store_true', help='Use the default editor')
     group_edit = parser_edit.add_mutually_exclusive_group()
     group_edit.add_argument('-p', '--public', action='store_true', dest='public')
     group_edit.add_argument('-P', '--private', action='store_false', dest='public')
@@ -136,10 +137,17 @@ def _print_search(rs, id_key):
             print s
 
 def add(args):
-    if args.content is None:
+    if args.content == '-':
         args.content = sys.stdin.read().strip()
-    doc = Document(Data(args.content, args.description), public=args.public)
-    doc = client.save(doc)
+
+    if args.editor:
+        args.id = None
+        _editor(args)
+    else:
+        if not args.content:
+            sys.exit('Error: content not set')
+        doc = Document(Data(args.content, args.description), public=args.public)
+        doc = client.save(doc)
 
 def get(args):
     if args.id:
@@ -198,9 +206,9 @@ def _editor(args):
         try:
             doc = client.get(args.id)
         except NotFoundError:
-            sys.exit('Document not found')
+            sys.exit('Error: Document not found')
     else:
-        doc = Document()
+        doc = Document(Data(args.content, args.description), public=args.public)
 
     (_, filename) = tempfile.mkstemp()
 
@@ -217,11 +225,12 @@ def _editor(args):
                 content, description = _read_data(f)
             except:
                 sys.exit('Error: content or description was not found')
-            else:
-                if content_ != content or description_ != description:
-                    doc.data.content = content
-                    doc.data.description = description
-                    client.save(doc)
+            if not content:
+                sys.exit('Error: content can not be empty')
+            if content_ != content or description_ != description:
+                doc.data.content = content
+                doc.data.description = description
+                client.save(doc)
 
     os.unlink(filename)
 
