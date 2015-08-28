@@ -7,8 +7,8 @@ To sync your notes you can set your own lai-server_ or use the public lai-server
 
 **Lai uses sqlite3 as default database engine, but can use mysql and mongodb.**
 
-Lai docker image
-----------------
+Docker image
+------------
 
 Create an account on http://lai.nerdlabs.com.ar and then get the docker image::
 
