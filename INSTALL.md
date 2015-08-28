@@ -43,7 +43,7 @@ Finally run lai with lai-client script
 
 ## a. Set your user and key name to connect with lai-server
 
-First login into http://lai.calcifer.com.ar with your Google account.
+First login into http://lai.nerdlabs.com.ar with your Google account.
 Then upload your public key and set a name to identify it.
 Finally create the lai/local_config.py file and set the following
 
