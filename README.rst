@@ -13,10 +13,10 @@ Lai docker image
 Create an account on http://lai.nerdlabs.com.ar and then get the docker image::
 
     $ docker run -t \
-        --env USER= \              # user name on lai.nerdlabs.com.ar
-        --env KEY_NAME= \                    # pub key name stored on lai.nerdlabs.com.ar
-        -v ~/.ssh/id_rsa:/root/.ssh/id_rsa \         # path to your private key
-        -v ~/data:/app/data \                        # dir to store data
+        --env USER= \                           # user on lai.nerdlabs.com.ar
+        --env KEY_NAME= \                       # pub key name on lai.nerdlabs.com.ar
+        -v ~/.ssh/id_rsa:/root/.ssh/id_rsa \    # path to your private key
+        -v ~/data:/app/data \                   # dir to store data
         lvidarte/lai python lai/app.py
 
 Just create an alias::
