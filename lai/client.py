@@ -26,7 +26,7 @@ from lai.database import NotFoundError
 from lai.lib import crypto
 
 
-CLIENT_PRV_KEY = open(config.CLIENT_PRV_KEY_PATH, 'r').read()
+CLIENT_PRV_KEY = open(config.PRV_KEY_PATH, 'r').read()
 
 
 class Client:
@@ -171,9 +171,12 @@ class Client:
         return res.read()
 
     def send_to_gist(self, doc):
-        from lai.lib import gist
-        g = gist.Gist(config.GITHUB_USER, config.GITHUB_PASSWORD)
-        return g.create(True, doc)
+        if config.GITHUB_USER and config.GITHUB_PASSWORD:
+            from lai.lib import gist
+            g = gist.Gist(config.GITHUB_USER, config.GITHUB_PASSWORD)
+            return g.create(True, doc)
+        else:
+            return "Github credentials not configured."
 
 if __name__ == '__main__':
     from lai.database import Database

@@ -59,10 +59,13 @@ class DBSqlite(DBBase):
     def _regexp(self, expr, data):
         regexp = re.compile(expr)
         data_dict = json.loads(data)
-        content = data_dict['content']
-        description = data_dict['description'] or ''
-        return regexp.search(content) is not None or \
-               regexp.search(description) is not None
+        if data_dict is not None:
+            content = data_dict['content']
+            description = data_dict['description'] or ''
+            return regexp.search(content) is not None or \
+                   regexp.search(description) is not None
+        else:
+            return False
 
     def _initialize_database(self):
         '''Create the table if doesn't exists'''
