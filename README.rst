@@ -10,7 +10,7 @@ To sync your notes you can set your own lai-server_ or use the public lai-server
 Lai docker image
 ----------------
 
-Create an account on http://lai.nerdlabs.com.ar and then get the docker image
+Create an account on http://lai.nerdlabs.com.ar and then get the docker image::
 
     $ docker run -t \
         --env USER= \              # user name on lai.nerdlabs.com.ar
@@ -19,7 +19,7 @@ Create an account on http://lai.nerdlabs.com.ar and then get the docker image
         -v ~/data:/app/data \                        # dir to store data
         lvidarte/lai python lai/app.py
 
-Just create an alias
+Just create an alias::
 
     $ alias lai='docker run -t ...'
 
