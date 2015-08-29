@@ -10,22 +10,32 @@ To sync your notes you can set your own lai-server_ or use the public lai-server
 Docker image
 ------------
 
-Create an account on http://lai.nerdlabs.com.ar and then get the docker image::
+Create an account on http://lai.nerdlabs.com.ar and then run the docker image::
 
-    $ docker run -t \
+    $ docker run -it \
         --env USER= \                           # user on lai.nerdlabs.com.ar
         --env KEY_NAME= \                       # pub key name on lai.nerdlabs.com.ar
         -v ~/.ssh/id_rsa:/root/.ssh/id_rsa \    # path to your private key
-        -v ~/data:/app/data \                   # dir to store data
+        -v ~/var/lai:/app/data \                # dir to store data
+        --rm=true \                             # remove container after run
         lvidarte/lai python lai/app.py
 
 Just create an alias::
 
-    $ alias lai='docker run -t ...'
-
+    alias lai='docker run -it \
+               --env USER= \
+               --env KEY_NAME= \
+               -v ~/.ssh/id_rsa:/root/.ssh/id_rsa \
+               -v ~/var/lai:/app/data \
+               --rm=true \
+               lvidarte/lai pythn lai/app.py'
 
 Use examples
 ------------
+
+Help by command::
+
+    $ lai <command> --help
 
 Store a note::
 
