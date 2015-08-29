@@ -1,9 +1,9 @@
-lai
+Lai
 ===
 
-lai is a command line program to store notes and keep them synchronized between multiple computers. The idea is to keep your commands, shortcuts, snippets and anything you want to have on hand at the console. You can also share notes with others.
+Lai is a command line program to store notes and keep them synchronized between multiple computers. The idea is to keep your commands, shortcuts, snippets and anything you want to have on hand at the console. You can also share notes with others.
 
-To sync your notes you can set your own lai-server_ or use the public lai-server at http://lai.calcifer.com.ar
+To sync your notes you can set your own lai-server_ or use the public lai-server at http://lai.nerdlabs.com.ar
 
 **Lai uses sqlite3 as default database engine, but can use mysql and mongodb.**
 
