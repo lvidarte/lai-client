@@ -28,7 +28,7 @@ Just create an alias::
                -v ~/.ssh/id_rsa:/root/.ssh/id_rsa \
                -v ~/var/lai:/app/data \
                --rm=true \
-               lvidarte/lai pythn lai/app.py'
+               lvidarte/lai python lai/app.py'
 
 Use examples
 ------------
