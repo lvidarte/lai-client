@@ -1,5 +1,7 @@
 #!bin/python -i
 
+# Author: Leo Vidarte <http://nerdlabs.com.ar>
+#
 # This file is part of lai-client.
 #
 # lai-client is free software: you can redistribute it and/or modify
